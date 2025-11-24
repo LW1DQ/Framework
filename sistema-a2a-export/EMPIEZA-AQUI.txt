@@ -1,0 +1,214 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                                                                               ║
+║                         👋 ¡EMPIEZA AQUÍ!                                     ║
+║                                                                               ║
+║                    Sistema A2A v1.3 - Guía de Inicio                          ║
+║                                                                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+
+═══════════════════════════════════════════════════════════════════════════════
+  🎯 ¿QUÉ ES ESTO?
+═══════════════════════════════════════════════════════════════════════════════
+
+Este es el Sistema A2A v1.3 (Agent-to-Agent) para simulaciones de redes MANET
+usando NS-3. Ha sido actualizado con todas las mejoras solicitadas por tu
+director de tesis.
+
+NUEVAS FUNCIONALIDADES v1.3:
+  ✅ Reproducibilidad total (semillas aleatorias)
+  ✅ Captura y análisis de trazas PCAP
+  ✅ Cálculo de overhead de enrutamiento
+  ✅ Tests estadísticos rigurosos
+  ✅ Reportes automáticos en formato académico
+
+
+═══════════════════════════════════════════════════════════════════════════════
+  📖 LEE ESTOS ARCHIVOS EN ORDEN
+═══════════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 1: INICIO RÁPIDO (5 minutos)                                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  📄 QUICK-START-v1.3.txt                                                │
+│     → Cómo empezar en 5 pasos                                           │
+│     → Comandos básicos                                                   │
+│     → Verificación rápida                                                │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 2: ENTENDER LAS NOVEDADES (10 minutos)                             │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  📄 LEEME-ACTUALIZACION-v1.3.txt                                        │
+│     → Qué cambió en v1.3                                                │
+│     → Por qué es importante                                              │
+│     → Cómo te beneficia                                                  │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 3: GUÍA COMPLETA (30 minutos)                                      │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  📄 GUIA-USO-NUEVAS-FUNCIONALIDADES.md                                  │
+│     → Guía detallada de todas las funcionalidades                       │
+│     → Ejemplos prácticos                                                 │
+│     → Tips para tu tesis                                                 │
+│     → Checklist académico                                                │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════
+  🚀 COMANDOS PARA EMPEZAR AHORA
+═══════════════════════════════════════════════════════════════════════════════
+
+# 1. Instalar dependencias
+pip install -r requirements.txt
+
+# 2. Verificar que todo funciona
+python test_integration.py
+
+# 3. Ejecutar tu primera simulación
+python main.py
+
+# 4. Ver resultados
+dir simulations\results\*.pcap
+type simulations\analysis\statistical_report_*.md
+start simulations\visualizations\dashboard.html
+
+
+═══════════════════════════════════════════════════════════════════════════════
+  📚 OTROS DOCUMENTOS ÚTILES
+═══════════════════════════════════════════════════════════════════════════════
+
+REFERENCIA RÁPIDA:
+  📄 MAPA-VISUAL-v1.3.txt           → Mapa visual del sistema
+  📄 FLUJO-ACTUALIZADO-v1.3.txt     → Diagrama de flujo
+
+DOCUMENTACIÓN TÉCNICA:
+  📄 MEJORAS-IMPLEMENTADAS-FINAL.md → Detalles técnicos
+  📄 VERIFICACION-FINAL-v1.3.md     → Verificación de cambios
+
+NAVEGACIÓN:
+  📄 INDICE-DOCUMENTACION-v1.3.md   → Índice completo (28 documentos)
+
+DESCRIPCIÓN GENERAL:
+  📄 README-v1.3.md                 → README completo del proyecto
+
+
+═══════════════════════════════════════════════════════════════════════════════
+  ❓ PREGUNTAS FRECUENTES
+═══════════════════════════════════════════════════════════════════════════════
+
+P: ¿Qué es lo más importante de v1.3?
+R: Reproducibilidad total, análisis PCAP, overhead de enrutamiento y tests
+   estadísticos. Todo lo que necesitas para tu tesis.
+
+P: ¿Por dónde empiezo?
+R: Lee QUICK-START-v1.3.txt (5 minutos) y ejecuta python main.py
+
+P: ¿Cómo sé que funciona?
+R: Ejecuta python test_integration.py para verificar
+
+P: ¿Dónde están los resultados?
+R: En simulations/results/ (XML y PCAP) y simulations/analysis/ (reportes)
+
+P: ¿Cómo uso las nuevas funcionalidades?
+R: Lee GUIA-USO-NUEVAS-FUNCIONALIDADES.md con ejemplos prácticos
+
+P: ¿Qué archivos PCAP se generan?
+R: Uno por cada interfaz de cada nodo: simulacion-X-Y.pcap
+
+P: ¿Cómo se calcula el overhead?
+R: Automáticamente desde los archivos PCAP o por estimación
+
+P: ¿Qué tests estadísticos se ejecutan?
+R: T-Test, ANOVA e intervalos de confianza (95% CI)
+
+P: ¿Cómo garantizo reproducibilidad?
+R: El sistema configura automáticamente semillas aleatorias
+
+
+═══════════════════════════════════════════════════════════════════════════════
+  ✅ CHECKLIST RÁPIDO
+═══════════════════════════════════════════════════════════════════════════════
+
+Antes de empezar:
+  [ ] Leer QUICK-START-v1.3.txt
+  [ ] Instalar dependencias: pip install -r requirements.txt
+  [ ] Verificar instalación: python test_integration.py
+
+Primera simulación:
+  [ ] Ejecutar: python main.py
+  [ ] Verificar archivos PCAP generados
+  [ ] Revisar reporte estadístico
+  [ ] Abrir dashboard
+
+Para tu tesis:
+  [ ] Leer GUIA-USO-NUEVAS-FUNCIONALIDADES.md
+  [ ] Ejecutar múltiples semillas (mínimo 5)
+  [ ] Calcular intervalos de confianza
+  [ ] Comparar con literatura
+  [ ] Incluir gráficos y tablas
+
+
+═══════════════════════════════════════════════════════════════════════════════
+  🎓 PARA TU TESIS DOCTORAL
+═══════════════════════════════════════════════════════════════════════════════
+
+El sistema ahora incluye TODO lo necesario:
+
+✅ REPRODUCIBILIDAD
+   • Semillas configurables
+   • Resultados idénticos
+   • Validación científica
+
+✅ ANÁLISIS PROFUNDO
+   • Trazas PCAP completas
+   • Overhead de enrutamiento
+   • Detección de protocolos
+
+✅ RIGOR ESTADÍSTICO
+   • Tests de significancia
+   • Intervalos de confianza
+   • Reportes automáticos
+
+✅ DOCUMENTACIÓN
+   • Formato académico
+   • Listo para incluir en tesis
+   • Tablas y gráficos
+
+
+═══════════════════════════════════════════════════════════════════════════════
+  💡 CONSEJO FINAL
+═══════════════════════════════════════════════════════════════════════════════
+
+No te abrumes con toda la documentación. Empieza simple:
+
+1. Lee QUICK-START-v1.3.txt (5 minutos)
+2. Ejecuta python main.py (2 minutos)
+3. Explora los resultados (5 minutos)
+4. Lee GUIA-USO-NUEVAS-FUNCIONALIDADES.md cuando necesites más detalles
+
+¡Es más fácil de lo que parece! 😊
+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                                                                               ║
+║                    🎉 ¡LISTO PARA EMPEZAR!                                    ║
+║                                                                               ║
+║              Sistema A2A v1.3 - Completamente funcional                       ║
+║              Lee QUICK-START-v1.3.txt y ejecuta python main.py                ║
+║                                                                               ║
+║                         ¡Éxito en tu tesis! 🎓                                ║
+║                                                                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+
+Versión: 1.3
+Fecha: 24 de Noviembre de 2025
+Estado: ✅ LISTO PARA USAR

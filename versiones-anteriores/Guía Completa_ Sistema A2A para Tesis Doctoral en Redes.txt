@@ -1,0 +1,2676 @@
+--- Página 1 ---
+Guía Completa de Implementación
+Sistema Multi-Agente A2A para Optimización de Protocolos de Enrutamiento
+Versión: 2.0 (Actualizada Noviembre 2025)
+Objetivo: Desplegar una orquestación completa de agentes autónomos para investigar, simular y optimizar
+protocolos de enrutamiento en Smart Cities utilizando hardware local y herramientas Open Source
+📋
+ÍNDICE
+PARTE I: FUNDAMENTOS Y PREPARACIÓN
+1. Visión General del Sistema
+2. Requisitos de Hardware y Software
+3. Arquitectura del Sistema Multi-Agente
+PARTE II: INSTALACIÓN Y CONFIGURACIÓN
+4. Fase 1: Motor de IA Local (Ollama)
+5. Fase 2: Entorno de Simulación NS-3
+6. Fase 3: Sistema de Orquestación (LangGraph)
+7. Fase 4: Integración NS-3 con IA (ns3-ai)
+PARTE III: DESARROLLO DE AGENTES
+8. Agente Investigador (Literatura Académica)
+9. Agente Programador (Generación de Código NS-3)
+10. Agente Ejecutor de Simulaciones
+11. Agente Analista de Protocolos
+12. Agente de Post-Procesado y Visualización
+13. Sistema de Bitácora Automática
+PARTE IV: AUTOMATIZACIÓN Y OPERACIÓN
+14. Flujos de Trabajo Automatizados
+15. Monitoreo y Debugging
+16. Optimización y Escalabilidad
+PARTE I: FUNDAMENTOS Y PREPARACIÓN
+
+--- Página 2 ---
+1. VISIÓN GENERAL DEL SISTEMA
+1.1 Propósito
+Este sistema representa un cambio paradigmático en la investigación doctoral: de la simulación manual iterativa
+a la automatización cognitiva. Los agentes A2A (Agent-to-Agent) no solo ejecutan tareas, sino que razonan
+sobre el problema, proponen soluciones innovadoras y documentan meticulosamente el proceso científico.
+1.2 Capacidades Clave
+Investigación automatizada: Búsqueda y síntesis de literatura académica
+Generación de código: Scripts NS-3 validados automáticamente
+Simulación adaptativa: Ejecución y corrección iterativa de experimentos
+Análisis inteligente: Procesamiento de métricas y generación de visualizaciones
+Reproducibilidad total: Bitácora automática de cada paso del proceso
+1.3 Arquitectura de Alto Nivel
+┌─────────────────────────────────────────────────────────┐
+│ SUPERVISOR │
+│ (Orquestador LangGraph) │
+│ - Gestión de estado global │
+│ - Enrutamiento de tareas │
+│ - Control de flujo cíclico │
+└────────────┬────────────────────────────────────────────┘
+│
+┌───────┴───────┬──────────┬──────────┬─────────┐
+│ │ │ │ │
+┌────▼────┐ ┌─────▼───┐ ┌───▼────┐ ┌──▼───┐ ┌▼────┐
+│ Agente │ │ Agente │ │ Agente │ │Agente│ │Bit. │
+│Investig.│ │Program. │ │Simul. │ │Anali.│ │ Log │
+└────┬────┘ └────┬────┘ └───┬────┘ └──┬───┘ └─────┘
+│ │ │ │
+│ ┌────▼───────────▼──────────▼────┐
+│ │ ESTADO COMPARTIDO │
+│ │ - research_notes │
+│ │ - code_snippet │
+└────────┤ - simulation_logs │
+│ - analysis_results │
+│ - errors │
+└────────────────────────────────┘
+2. REQUISITOS DE HARDWARE Y SOFTWARE
+
+--- Página 3 ---
+2.1 Requisitos de Hardware
+Componente Mínimo Recomendado Óptimo
+CPU 4 cores @ 2.5GHz 8 cores @ 3.0GHz 16 cores @ 3.5GHz
+RAM 16 GB 32 GB 64 GB
+GPU Ninguna (CPU) NVIDIA RTX 3060 (12GB) NVIDIA RTX 4090 (24GB)
+Almacenamiento 100 GB SSD 250 GB NVMe SSD 500 GB NVMe SSD
+SO Ubuntu 22.04 Ubuntu 24.04 Ubuntu 24.04
+Notas importantes:
+La GPU acelera la inferencia de LLMs (2-5x más rápido) pero NO es obligatoria
+NS-3 es CPU-intensivo; más cores = simulaciones paralelas
+Las trazas PCAP pueden ocupar varios GB por simulación compleja
+2.2 Stack Tecnológico (Noviembre 2025)
+Motor de IA:
+Ollama v0.5.2+ (Inferencia local de LLMs)
+Modelos recomendados:
+qwen2.5-coder:32b - Mejor modelo de código actual (supera a DeepSeek en benchmarks recientes)
+deepseek-coder-v2:16b - Alternativa eficiente para hardware limitado
+llama3.3:8b - Para razonamiento general y supervisión
+nomic-embed-text - Para embeddings de documentos
+Orquestación:
+LangGraph v1.0.3 (Última versión estable con checkpoints mejorados)
+LangChain v1.0+ (Para componentes auxiliares)
+Simulador:
+NS-3 v3.43 o v3.44 (Última versión estable)
+Python bindings habilitados
+Interfaz IA-Red:
+ns3-ai (Preferido por memoria compartida de alta velocidad)
+ns3-gym (Alternativa compatible con OpenAI Gym)
+Base de Datos y Análisis:
+
+--- Página 4 ---
+ChromaDB v0.4+ (Base de datos vectorial local)
+Pandas v2.0+ (Procesamiento de datos)
+Matplotlib + Seaborn (Visualización)
+2.3 Preparación del Entorno Base
+bash
+# 1. Actualizar sistema
+sudo apt update && sudo apt upgrade -y
+# 2. Instalar dependencias esenciales
+sudo apt install -y \
+g++ python3 python3-dev python3-pip python3-venv \
+cmake ninja-build git \
+pkg-config sqlite3 libsqlite3-dev \
+curl wget tar bzip2
+# 3. Instalar dependencias para NS-3
+sudo apt install -y \
+gir1.2-goocanvas-2.0 python3-gi python3-gi-cairo \
+python3-pygraphviz gir1.2-gtk-3.0 \
+qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools \
+tcpdump wireshark \
+libxml2 libxml2-dev \
+libboost-all-dev \
+libeigen3-dev gsl-bin libgsl-dev
+# 4. Crear directorio de trabajo
+mkdir -p ~/tesis-a2a
+cd ~/tesis-a2a
+PARTE II: INSTALACIÓN Y CONFIGURACIÓN
+4. FASE 1: MOTOR DE IA LOCAL (OLLAMA)
+4.1 Instalación de Ollama
+bash
+
+--- Página 5 ---
+# Instalación en Linux/Mac
+curl -fsSL https://ollama.com/install.sh | sh
+# Verificar instalación
+ollama --version
+# Iniciar servidor (se ejecuta automáticamente como servicio)
+# Para verificar que está corriendo:
+curl http://localhost:11434/api/tags
+4.2 Descarga de Modelos Especializados
+IMPORTANTE: Descarga solo los modelos que tu hardware pueda manejar:
+bash
+# Para hardware limitado (16GB RAM):
+ollama pull qwen2.5-coder:7b # Mejor modelo pequeño de código
+ollama pull llama3.3:8b # Razonamiento general
+ollama pull nomic-embed-text # Embeddings (esencial)
+# Para hardware medio (32GB RAM):
+ollama pull qwen2.5-coder:32b # Estado del arte en código
+ollama pull deepseek-coder-v2:16b # Alternativa eficiente
+ollama pull llama3.3:8b
+ollama pull nomic-embed-text
+# Para hardware potente (64GB RAM + GPU):
+ollama pull qwen2.5-coder:32b
+ollama pull deepseek-coder-v2:236b # Máximo rendimiento
+ollama pull llama3.3:70b
+ollama pull nomic-embed-text
+4.3 Verificación y Test
+bash
+# Test del modelo de código
+ollama run qwen2.5-coder:7b "Escribe una función Python para bubble sort"
+# Test del modelo general
+ollama run llama3.3:8b "Explica qué es un protocolo de enrutamiento"
+# Verificar embeddings
+ollama show nomic-embed-text
+
+--- Página 6 ---
+4.4 Configuración Avanzada (Opcional)
+Crear archivo ~/.ollama/config.json :
+json
+{
+"origins": ["http://localhost:*"],
+"models_path": "/home/tu_usuario/.ollama/models",
+"keep_alive": "5m",
+"num_parallel": 2,
+"num_ctx": 8192
+}
+5. FASE 2: ENTORNO DE SIMULACIÓN NS-3
+5.1 Compilación de NS-3 con Python Bindings
+CRÍTICO: NO uses apt install ns3 . Siempre compila desde fuente.
+bash
+cd ~/tesis-a2a
+# 1. Descargar NS-3 (Versión 3.43 o 3.44)
+wget https://www.nsnam.org/releases/ns-allinone-3.43.tar.bz2
+tar xjf ns-allinone-3.43.tar.bz2
+cd ns-allinone-3.43/ns-3.43
+# 2. Configurar con Python bindings y ejemplos
+./ns3 configure --enable-python-bindings --enable-examples
+# 3. Compilar (tomará 10-30 minutos dependiendo de tu CPU)
+./ns3 build
+# 4. Verificar compilación exitosa
+./ns3 build-status
+# 5. Test básico
+./test.py
+5.2 Configurar Python Virtual Environment para NS-3
+bash
+
+--- Página 7 ---
+# Crear entorno virtual
+python3 -m venv ~/tesis-a2a/venv-ns3
+source ~/tesis-a2a/venv-ns3/bin/activate
+# Instalar dependencias Python para NS-3
+pip install --upgrade pip
+pip install numpy matplotlib pandas
+5.3 Verificación de Python Bindings
+bash
+# Test de importación
+cd ~/tesis-a2a/ns-allinone-3.43/ns-3.43
+python3 << EOF
+import sys
+sys.path.append('./build/lib/python3')
+import ns.core
+import ns.network
+import ns.internet
+print("✓ Python bindings funcionando correctamente")
+print(f"NS-3 versión: {ns.core.Version()}")
+EOF
+6. FASE 3: SISTEMA DE ORQUESTACIÓN (LANGGRAPH)
+6.1 Crear Proyecto Python para el Sistema A2A
+bash
+
+--- Página 8 ---
+cd ~/tesis-a2a
+# Crear estructura de proyecto
+mkdir -p sistema-a2a/{agents,utils,config,logs,data,simulations}
+cd sistema-a2a
+# Crear entorno virtual dedicado
+python3 -m venv venv-a2a
+source venv-a2a/bin/activate
+# Instalar dependencias principales (Noviembre 2025)
+pip install --upgrade pip
+# LangGraph y LangChain (versiones estables más recientes)
+pip install langgraph==1.0.3
+pip install langchain==1.0.0
+pip install langchain-community
+pip install langchain-ollama
+# Bases de datos y embeddings
+pip install chromadb==0.4.22
+pip install sentence-transformers
+# Análisis y visualización
+pip install pandas numpy matplotlib seaborn
+# APIs académicas
+pip install semanticscholar
+pip install arxiv
+# Utilidades
+pip install python-dotenv
+pip install pydantic==2.5.0
+6.2 Estructura del Proyecto
+bash
+
+--- Página 9 ---
+sistema-a2a/
+├── agents/
+│ ├── __init__.py
+│ ├── researcher.py # Agente investigador
+│ ├── coder.py # Agente programador
+│ ├── simulator.py # Agente ejecutor
+│ ├── analyst.py # Agente analista
+│ └── visualizer.py # Agente visualización
+├── utils/
+│ ├── __init__.py
+│ ├── state.py # Definición de estado
+│ ├── llm_utils.py # Utilidades LLM
+│ └── ns3_utils.py # Utilidades NS-3
+├── config/
+│ ├── __init__.py
+│ └── settings.py # Configuración global
+├── logs/
+│ └── bitacora_tesis.db # Base de datos de bitácora
+├── data/
+│ ├── papers/ # Papers descargados
+│ └── vector_db/ # ChromaDB
+├── simulations/
+│ ├── scripts/ # Scripts NS-3 generados
+│ ├── results/ # Resultados de simulaciones
+│ └── plots/ # Gráficos generados
+├── main.py # Punto de entrada principal
+├── supervisor.py # Orquestador LangGraph
+└── requirements.txt # Dependencias
+6.3 Implementación del Estado Global
+Crear utils/state.py :
+python
+
+--- Página 10 ---
+from typing import TypedDict, List, Annotated, Dict, Any
+import operator
+class AgentState(TypedDict):
+"""
+Estado compartido entre todos los agentes.
+Este es el 'cerebro' del sistema.
+"""
+# Tarea actual
+task: str
+# Investigación
+research_notes: Annotated[List[str], operator.add]
+papers_found: Annotated[List[Dict[str, Any]], operator.add]
+# Código
+code_snippet: str
+code_validated: bool
+# Simulación
+simulation_logs: str
+simulation_status: str # 'pending', 'running', 'completed', 'failed'
+# Análisis
+analysis_results: Dict[str, Any]
+metrics: Dict[str, float]
+# Visualización
+plots_generated: Annotated[List[str], operator.add]
+# Control de errores
+errors: Annotated[List[str], operator.add]
+iteration_count: int
+max_iterations: int
+# Bitácora
+audit_trail: Annotated[List[Dict[str, Any]], operator.add]
+# Mensajes conversacionales
+messages: Annotated[List[str], operator.add]
+6.4 Configuración Global
+Crear config/settings.py :
+python
+
+--- Página 11 ---
+import os
+from pathlib import Path
+# Rutas
+PROJECT_ROOT = Path(__file__).parent.parent
+NS3_ROOT = Path.home() / "tesis-a2a" / "ns-allinone-3.43" / "ns-3.43"
+SIMULATIONS_DIR = PROJECT_ROOT / "simulations"
+DATA_DIR = PROJECT_ROOT / "data"
+LOGS_DIR = PROJECT_ROOT / "logs"
+# Ollama
+OLLAMA_BASE_URL = "http://localhost:11434"
+# Modelos LLM
+MODEL_REASONING = "llama3.3:8b" # Para razonamiento general
+MODEL_CODING = "qwen2.5-coder:7b" # Para generación de código
+MODEL_EMBEDDING = "nomic-embed-text" # Para embeddings
+# ChromaDB
+CHROMA_PATH = DATA_DIR / "vector_db"
+# Límites
+MAX_ITERATIONS = 5 # Evitar bucles infinitos
+SIMULATION_TIMEOUT = 600 # 10 minutos por simulación
+# Crear directorios si no existen
+for dir_path in [SIMULATIONS_DIR, DATA_DIR, LOGS_DIR, CHROMA_PATH]:
+dir_path.mkdir(parents=True, exist_ok=True)
+7. FASE 4: INTEGRACIÓN NS-3 CON IA (ns3-ai)
+7.1 Instalación de ns3-ai
+bash
+
+--- Página 12 ---
+cd ~/tesis-a2a/ns-allinone-3.43/ns-3.43/contrib
+# Clonar repositorio ns3-ai
+git clone https://github.com/hust-diangroup/ns3-ai.git ai
+# Volver al directorio raíz de NS-3
+cd ..
+# Reconfigurar NS-3 con ns3-ai
+./ns3 configure --enable-python-bindings --enable-examples \
+-- -DPython_EXECUTABLE=$(which python3)
+# Compilar
+./ns3 build
+# Instalar interfaz Python de ns3-ai
+source ~/tesis-a2a/venv-ns3/bin/activate
+pip install -e contrib/ai/python_utils
+pip install -e contrib/ai/model/gym-interface/py
+7.2 Verificar Instalación de ns3-ai
+bash
+# Test del ejemplo A-Plus-B (ejemplo más simple)
+cd ~/tesis-a2a/ns-allinone-3.43/ns-3.43
+# Compilar ejemplo
+./ns3 build ns3ai_apb_gym
+# Ejecutar (requiere dos terminales)
+# Terminal 1 - Ejecutar simulación NS-3:
+./ns3 run ns3ai_apb_gym
+# Terminal 2 - Ejecutar agente Python:
+cd contrib/ai/examples/a-plus-b
+python3 run_gym.py
+# Si ves "Sum: X + Y = Z" funcionando, ¡éxito!
+7.3 Alternativa: Instalación de ns3-gym (Si ns3-ai falla)
+bash
+
+--- Página 13 ---
+cd ~/tesis-a2a/ns-allinone-3.43/ns-3.43/contrib
+# Clonar ns3-gym
+git clone https://github.com/tkn-tub/ns3-gym.git opengym
+cd opengym
+# Cambiar a rama compatible
+git checkout app-ns-3.36+
+cd ../../
+# Reconfigurar y compilar
+./ns3 configure --enable-python-bindings --enable-examples
+./ns3 build
+# Instalar interfaz Python
+cd contrib/opengym
+source ~/tesis-a2a/venv-ns3/bin/activate
+pip install ./model/ns3gym
+PARTE III: DESARROLLO DE AGENTES
+8. AGENTE INVESTIGADOR (LITERATURA ACADÉMICA)
+Este agente es responsable de buscar, recuperar y sintetizar literatura académica relevante.
+8.1 Implementación Completa
+Crear agents/researcher.py :
+python
+
+--- Página 14 ---
+"""
+Agente Investigador: Búsqueda y síntesis de literatura académica
+"""
+import sys
+sys.path.append('../')
+from langchain_community.tools.semanticscholar.tool import SemanticScholarQueryRun
+from langchain_ollama import ChatOllama
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import OllamaEmbeddings
+import chromadb
+from chromadb.utils import embedding_functions
+import arxiv
+from typing import List, Dict
+import json
+from config.settings import (
+OLLAMA_BASE_URL, MODEL_REASONING, MODEL_EMBEDDING,
+CHROMA_PATH, DATA_DIR
+)
+from utils.state import AgentState
+class ResearchAgent:
+"""
+Agente especializado en investigación académica automatizada
+"""
+def __init__(self):
+# LLM para síntesis
+self.llm = ChatOllama(
+model=MODEL_REASONING,
+temperature=0.1, # Baja temperatura para respuestas factuales
+base_url=OLLAMA_BASE_URL
+)
+# Herramienta de búsqueda Semantic Scholar
+self.semantic_scholar = SemanticScholarQueryRun()
+# Cliente arXiv
+self.arxiv_client = arxiv.Client()
+# ChromaDB para almacenar papers
+self.chroma_client = chromadb.PersistentClient(path=str(CHROMA_PATH))
+# Función de embedding local
+
+--- Página 15 ---
+self.embedding_fn = embedding_functions.OllamaEmbeddingFunction(
+model_name=MODEL_EMBEDDING,
+url=f"{OLLAMA_BASE_URL}/api/embeddings"
+)
+# Colección para papers
+self.collection = self.chroma_client.get_or_create_collection(
+name="research_papers",
+embedding_function=self.embedding_fn
+)
+# Text splitter para chunks
+self.text_splitter = RecursiveCharacterTextSplitter(
+chunk_size=1000,
+chunk_overlap=200
+)
+def search_semantic_scholar(self, query: str, max_results: int = 10) -> List[Dict]:
+"""
+Buscar papers en Semantic Scholar
+"""
+print(f"🔍 Buscando en Semantic Scholar: {query}")
+try:
+results = self.semantic_scholar.run(query)
+# Parsear resultados (formato JSON)
+papers = json.loads(results) if isinstance(results, str) else results
+# Filtrar y limpiar
+cleaned_papers = []
+for paper in papers[:max_results]:
+cleaned_papers.append({
+'title': paper.get('title', ''),
+'abstract': paper.get('abstract', ''),
+'year': paper.get('year', ''),
+'authors': paper.get('authors', []),
+'url': paper.get('url', ''),
+'citations': paper.get('citationCount', 0)
+})
+return cleaned_papers
+except Exception as e:
+print(f"❌ Error en Semantic Scholar: {e}")
+return []
+def search_arxiv(self, query: str, max_results: int = 5) -> List[Dict]:
+
+--- Página 16 ---
+"""
+Buscar papers en arXiv
+"""
+print(f"🔍 Buscando en arXiv: {query}")
+try:
+search = arxiv.Search(
+query=query,
+max_results=max_results,
+sort_by=arxiv.SortCriterion.Relevance
+)
+papers = []
+for result in self.arxiv_client.results(search):
+papers.append({
+'title': result.title,
+'abstract': result.summary,
+'year': result.published.year,
+'authors': [author.name for author in result.authors],
+'url': result.pdf_url,
+'citations': 0 # arXiv no proporciona citas
+})
+return papers
+except Exception as e:
+print(f"❌ Error en arXiv: {e}")
+return []
+def store_papers_in_vectordb(self, papers: List[Dict]):
+"""
+Almacenar papers en ChromaDB para RAG posterior
+"""
+print(f"💾 Almacenando {len(papers)} papers en base de datos vectorial...")
+for i, paper in enumerate(papers):
+# Combinar título y abstract para embedding
+content = f"Title: {paper['title']}\n\nAbstract: {paper['abstract']}"
+# Dividir en chunks si es muy largo
+chunks = self.text_splitter.split_text(content)
+# Almacenar cada chunk
+for j, chunk in enumerate(chunks):
+doc_id = f"paper_{i}_chunk_{j}"
+self.collection.add(
+
+--- Página 17 ---
+documents=[chunk],
+metadatas=[{
+'title': paper['title'],
+'year': str(paper['year']),
+'url': paper['url'],
+'citations': paper['citations']
+}],
+ids=[doc_id]
+)
+def query_vectordb(self, query: str, n_results: int = 5) -> List[str]:
+"""
+Consultar la base de datos vectorial (RAG)
+"""
+results = self.collection.query(
+query_texts=[query],
+n_results=n_results
+)
+return results['documents'][0] if results['documents'] else []
+def synthesize_research(self, query: str, papers: List[Dict]) -> str:
+"""
+Sintetizar findings usando el LLM local
+"""
+print("📝 Sintetizando hallazgos de investigación...")
+# Preparar contexto
+papers_summary = "\n\n".join([
+f"Paper {i+1}:\nTítulo: {p['title']}\n"
+f"Año: {p['year']}\nCitas: {p['citations']}\n"
+f"Abstract: {p['abstract'][:500]}..."
+for i, p in enumerate(papers[:5]) # Top 5 papers
+])
+prompt = f"""
+Eres un investigador experto en redes de telecomunicaciones y Smart Cities.
+Analiza los siguientes papers académicos y proporciona una síntesis concisa.
+Consulta de investigación: {query}
+Papers encontrados:
+{papers_summary}
+Por favor, proporciona:
+1. **Resumen de hallazgos clave** (2-3 párrafos)
+2. **Brechas de investigación identificadas**
+
+--- Página 18 ---
+3. **Recomendaciones técnicas** para implementación en NS-3
+Sé específico y cita números de paper cuando sea relevante.
+"""
+response = self.llm.invoke(prompt)
+return response.content
+def run(self, state: AgentState) -> Dict:
+"""
+Ejecutar el agente investigador
+"""
+print("\n" + "="*60)
+print("🎓 AGENTE INVESTIGADOR ACTIVADO")
+print("="*60)
+task = state['task']
+# 1. Buscar en Semantic Scholar
+ss_papers = self.search_semantic_scholar(
+f"routing protocols optimization {task} smart cities ns-3",
+max_results=10
+)
+# 2. Buscar en arXiv
+arxiv_papers = self.search_arxiv(
+f"routing protocols {task} machine learning",
+max_results=5
+)
+# 3. Combinar resultados
+all_papers = ss_papers + arxiv_papers
+# 4. Almacenar en ChromaDB
+if all_papers:
+self.store_papers_in_vectordb(all_papers)
+# 5. Sintetizar hallazgos
+if all_papers:
+synthesis = self.synthesize_research(task, all_papers)
+else:
+synthesis = "No se encontraron papers relevantes. Proceder con conocimiento base."
+# 6. Actualizar estado
+return {
+"research_notes": [synthesis],
+"papers_found": all_papers,
+
+--- Página 19 ---
+"audit_trail": [{
+'agent': 'researcher',
+'action': 'literature_review',
+'papers_count': len(all_papers),
+'timestamp': str(pd.Timestamp.now())
+}]
+}
+def research_node(state: AgentState) -> Dict:
+"""
+Nodo para LangGraph
+"""
+agent = ResearchAgent()
+return agent.run(state)
+8.2 Test del Agente Investigador
+Crear test_researcher.py :
+python
+
+--- Página 20 ---
+from agents.researcher import research_node
+from utils.state import AgentState
+# Estado de prueba
+test_state = {
+'task': 'AODV optimization using Graph Neural Networks',
+'research_notes': [],
+'papers_found': [],
+'code_snippet': '',
+'code_validated': False,
+'simulation_logs': '',
+'simulation_status': 'pending',
+'analysis_results': {},
+'metrics': {},
+'plots_generated': [],
+'errors': [],
+'iteration_count': 0,
+'max_iterations': 5,
+'audit_trail': [],
+'messages': []
+}
+# Ejecutar agente
+result = research_node(test_state)
+print("\n" + "="*60)
+print("RESULTADO:")
+print("="*60)
+print(f"Papers encontrados: {len(result['papers_found'])}")
+print(f"\nSíntesis:\n{result['research_notes'][0]}")
+9. AGENTE PROGRAMADOR (GENERACIÓN DE CÓDIGO NS-3)
+Este es el agente más crítico: genera scripts de simulación NS-3 válidos.
+9.1 Implementación Completa
+Crear agents/coder.py :
+python
+
+--- Página 21 ---
+"""
+Agente Programador: Generación y validación de código NS-3
+"""
+import sys
+sys.path.append('../')
+from langchain_ollama import ChatOllama
+from typing import Dict
+import re
+from config.settings import (
+OLLAMA_BASE_URL, MODEL_CODING,
+SIMULATIONS_DIR
+)
+from utils.state import AgentState
+class CoderAgent:
+"""
+Agente especializado en generación de código NS-3
+"""
+def __init__(self):
+# LLM especializado en código
+self.llm = ChatOllama(
+model=MODEL_CODING,
+temperature=0.1, # Baja temperatura para código determinista
+base_url=OLLAMA_BASE_URL
+)
+# Templates de código base
+self.base_template = '''#!/usr/bin/env python3
+"""
+Script de simulación NS-3 generado automáticamente
+Objetivo: {objective}
+"""
+import sys
+sys.path.append('build/lib/python3')
+import ns.core
+import ns.network
+import ns.internet
+import ns.mobility
+import ns.wifi
+import ns.applications
+
+--- Página 22 ---
+import ns.flow_monitor
+def main():
+"""Función principal de simulación"""
+# Configuración de simulación
+ns.core.Config.SetDefault("ns3::WifiRemoteStationManager::RtsCtsThreshold", ns.core.StringValue("2200"))
+# {code_placeholder}
+# Configurar FlowMonitor para métricas
+flowmon_helper = ns.flow_monitor.FlowMonitorHelper()
+monitor = flowmon_helper.InstallAll()
+# Ejecutar simulación
+print("Iniciando simulación...")
+ns.core.Simulator.Stop(ns.core.Seconds(simulation_time))
+ns.core.Simulator.Run()
+# Exportar resultados
+monitor.SerializeToXmlFile("resultados.xml", True, True)
+print("Simulación completada. Resultados en resultados.xml")
+ns.core.Simulator.Destroy()
+return 0
+if __name__ == "__main__":
+sys.exit(main())
+'''
+def extract_code(self, response: str) -> str:
+"""
+Extraer código limpio de la respuesta del LLM
+"""
+# Buscar bloques de código Python
+code_pattern = r'```python\n(.*?)\n```'
+matches = re.findall(code_pattern, response, re.DOTALL)
+if matches:
+return matches[0]
+# Si no hay bloques markdown, retornar todo
+return response.strip()
+def validate_imports(self, code: str) -> bool:
+"""
+Validar que el código tenga los imports necesarios
+
+--- Página 23 ---
+"""
+required_imports = ['ns.core', 'ns.network']
+return all(imp in code for imp in required_imports)
+def generate_code(self, task: str, research_notes: str,
+previous_error: str = None) -> str:
+"""
+Generar código NS-3 usando Chain-of-Thought
+"""
+print("🔨 Generando código NS-3...")
+# Construir prompt con CoT
+prompt = f"""
+Eres un experto en NS-3 y Python. Tu tarea es generar un script de simulación.
+**OBJETIVO DE SIMULACIÓN:**
+{task}
+**CONTEXTO DE INVESTIGACIÓN:**
+{research_notes}
+**INSTRUCCIONES CRÍTICAS:**
+1. USA SOLO Python bindings de NS-3 (NO C++)
+2. Importa módulos como: import ns.core, import ns.network, etc.
+3. Configura FlowMonitor para exportar métricas a "resultados.xml"
+4. Incluye movilidad de nodos si se trata de VANETs
+5. Usa protocolos estándar (AODV, OLSR, DSDV) como baseline
+6. La simulación debe durar entre 50-100 segundos
+7. NO uses funciones obsoletas (verifica versión NS-3 3.43)
+**REGLAS DE FORMATO:**
+- Devuelve SOLO el código Python completo
+- NO incluyas explicaciones fuera del código
+- USA comentarios # dentro del código para explicar
+- El código debe ser ejecutable directamente
+"""
+# Si hay error previo, agregarlo para corrección
+if previous_error:
+prompt += f"""
+**ERROR ANTERIOR A CORREGIR:**
+{previous_error}
+Por favor, corrige el código basándote en este error específico.
+"""
+
+--- Página 24 ---
+# Primero: Razonamiento (Chain of Thought)
+cot_prompt = f"""
+Antes de escribir código, planifica la simulación paso a paso:
+1. ¿Qué tipo de red es? (MANET, VANET, WSN)
+2. ¿Cuántos nodos se necesitan?
+3. ¿Qué protocolo de enrutamiento usar como baseline?
+4. ¿Qué métricas medir?
+5. ¿Qué modelo de movilidad aplicar?
+Responde brevemente cada pregunta en 1-2 líneas.
+"""
+reasoning = self.llm.invoke(cot_prompt + "\n\nContexto:\n" + task)
+print(f"📋 Planificación:\n{reasoning.content}\n")
+# Segundo: Generar código basado en el razonamiento
+full_prompt = prompt + f"\n**TU PLANIFICACIÓN:**\n{reasoning.content}\n\nAhora genera el código:"
+response = self.llm.invoke(full_prompt)
+code = self.extract_code(response.content)
+return code
+def save_code(self, code: str, filename: str = "tesis_sim.py") -> str:
+"""
+Guardar código en el directorio de simulaciones
+"""
+filepath = SIMULATIONS_DIR / "scripts" / filename
+filepath.parent.mkdir(parents=True, exist_ok=True)
+with open(filepath, 'w') as f:
+f.write(code)
+# Hacer ejecutable
+filepath.chmod(0o755)
+return str(filepath)
+def run(self, state: AgentState) -> Dict:
+"""
+Ejecutar el agente programador
+"""
+print("\n" + "="*60)
+print("💻 AGENTE PROGRAMADOR ACTIVADO")
+print("="*60)
+
+--- Página 25 ---
+task = state['task']
+research_notes = "\n".join(state.get('research_notes', []))
+previous_error = state['errors'][-1] if state.get('errors') else None
+# Generar código
+code = self.generate_code(task, research_notes, previous_error)
+# Validar imports básicos
+if not self.validate_imports(code):
+return {
+'code_snippet': code,
+'code_validated': False,
+'errors': ['Código generado no tiene los imports necesarios de NS-3'],
+'iteration_count': state['iteration_count'] + 1
+}
+# Guardar código
+filepath = self.save_code(code)
+print(f"✅ Código guardado en: {filepath}")
+return {
+'code_snippet': code,
+'code_validated': True,
+'iteration_count': state['iteration_count'] + 1,
+'audit_trail': [{
+'agent': 'coder',
+'action': 'code_generation',
+'filepath': filepath,
+'timestamp': str(pd.Timestamp.now())
+}]
+}
+def coder_node(state: AgentState) -> Dict:
+"""
+Nodo para LangGraph
+"""
+agent = CoderAgent()
+return agent.run(state)
+10. AGENTE EJECUTOR DE SIMULACIONES
+Este agente ejecuta los scripts NS-3 y captura errores.
+10.1 Implementación Completa
+
+--- Página 26 ---
+Crear agents/simulator.py :
+python
+
+--- Página 27 ---
+"""
+Agente Ejecutor: Ejecución de simulaciones NS-3
+"""
+import sys
+sys.path.append('../')
+import subprocess
+import os
+from pathlib import Path
+from typing import Dict
+import pandas as pd
+from config.settings import (
+NS3_ROOT, SIMULATIONS_DIR, SIMULATION_TIMEOUT
+)
+from utils.state import AgentState
+class SimulatorAgent:
+"""
+Agente especializado en ejecutar simulaciones NS-3
+"""
+def __init__(self):
+self.ns3_root = NS3_ROOT
+self.results_dir = SIMULATIONS_DIR / "results"
+self.results_dir.mkdir(parents=True, exist_ok=True)
+def prepare_simulation(self, code: str) -> Path:
+"""
+Preparar script para ejecución
+"""
+# Guardar en directorio scratch de NS-3
+script_path = self.ns3_root / "scratch" / "tesis_sim.py"
+with open(script_path, 'w') as f:
+f.write(code)
+script_path.chmod(0o755)
+return script_path
+def execute_simulation(self, script_name: str = "tesis_sim.py") -> Dict:
+"""
+Ejecutar simulación NS-3
+"""
+print(f"🚀 Ejecutando simulación: {script_name}")
+
+--- Página 28 ---
+try:
+# Comando: ./ns3 run scratch/tesis_sim.py
+cmd = ["./ns3", "run", f"scratch/{script_name}"]
+result = subprocess.run(
+cmd,
+cwd=str(self.ns3_root),
+capture_output=True,
+text=True,
+timeout=SIMULATION_TIMEOUT
+)
+# Verificar éxito
+if result.returncode != 0:
+error_msg = result.stderr if result.stderr else result.stdout
+return {
+'success': False,
+'error': error_msg,
+'stdout': result.stdout
+}
+# Buscar archivo de resultados
+results_file = self.ns3_root / "resultados.xml"
+if not results_file.exists():
+return {
+'success': False,
+'error': 'Simulación ejecutó pero no generó resultados.xml'
+}
+# Mover resultados a directorio organizado
+timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+new_path = self.results_dir / f"sim_{timestamp}.xml"
+results_file.rename(new_path)
+return {
+'success': True,
+'results_path': str(new_path),
+'stdout': result.stdout
+}
+except subprocess.TimeoutExpired:
+return {
+'success': False,
+'error': f'Simulación excedió timeout de {SIMULATION_TIMEOUT}s'
+}
+
+--- Página 29 ---
+except Exception as e:
+return {
+'success': False,
+'error': f'Error inesperado: {str(e)}'
+}
+def run(self, state: AgentState) -> Dict:
+"""
+Ejecutar el agente simulador
+"""
+print("\n" + "="*60)
+print("⚡ AGENTE SIMULADOR ACTIVADO")
+print("="*60)
+code = state.get('code_snippet', '')
+if not code:
+return {
+'simulation_status': 'failed',
+'errors': ['No hay código para ejecutar']
+}
+# Preparar script
+script_path = self.prepare_simulation(code)
+# Ejecutar
+result = self.execute_simulation()
+if result['success']:
+print(f"✅ Simulación exitosa!")
+print(f"📊 Resultados: {result['results_path']}")
+return {
+'simulation_status': 'completed',
+'simulation_logs': result['results_path'],
+'audit_trail': [{
+'agent': 'simulator',
+'action': 'simulation_completed',
+'results_path': result['results_path'],
+'timestamp': str(pd.Timestamp.now())
+}]
+}
+else:
+print(f"❌ Simulación falló")
+print(f"Error: {result['error']}")
+return {
+
+--- Página 30 ---
+'simulation_status': 'failed',
+'errors': [result['error']],
+'iteration_count': state['iteration_count'] + 1
+}
+def simulator_node(state: AgentState) -> Dict:
+"""
+Nodo para LangGraph
+"""
+agent = SimulatorAgent()
+return agent.run(state)
+11. AGENTE ANALISTA DE PROTOCOLOS
+Este agente analiza resultados y propone mejoras con redes neuronales.
+11.1 Implementación
+Crear agents/analyst.py :
+python
+
+--- Página 31 ---
+"""
+Agente Analista: Análisis de resultados y propuesta de optimizaciones
+"""
+import sys
+sys.path.append('../')
+from langchain_ollama import ChatOllama
+import xml.etree.ElementTree as ET
+import pandas as pd
+from typing import Dict
+import numpy as np
+from config.settings import (
+OLLAMA_BASE_URL, MODEL_REASONING
+)
+from utils.state import AgentState
+class AnalystAgent:
+"""
+Agente especializado en análisis de protocolos
+"""
+def __init__(self):
+self.llm = ChatOllama(
+model=MODEL_REASONING,
+temperature=0.3,
+base_url=OLLAMA_BASE_URL
+)
+def parse_flowmonitor_xml(self, xml_path: str) -> pd.DataFrame:
+"""
+Parsear XML de FlowMonitor y extraer métricas
+"""
+print(f"📊 Parseando resultados: {xml_path}")
+tree = ET.parse(xml_path)
+root = tree.getroot()
+flows = []
+for flow in root.findall('.//Flow'):
+flow_id = flow.get('flowId')
+# Extraer estadísticas
+tx_packets = int(flow.get('txPackets', 0))
+
+--- Página 32 ---
+rx_packets = int(flow.get('rxPackets', 0))
+tx_bytes = int(flow.get('txBytes', 0))
+rx_bytes = int(flow.get('rxBytes', 0))
+delay_sum = float(flow.get('delaySum', '0').replace('ns', ''))
+jitter_sum = float(flow.get('jitterSum', '0').replace('ns', ''))
+# Calcular métricas
+pdr = (rx_packets / tx_packets * 100) if tx_packets > 0 else 0
+throughput = (rx_bytes * 8 / 1000000) # Mbps (asumiendo 100s simulación)
+avg_delay = (delay_sum / rx_packets / 1e6) if rx_packets > 0 else 0 # ms
+flows.append({
+'flow_id': flow_id,
+'tx_packets': tx_packets,
+'rx_packets': rx_packets,
+'pdr': pdr,
+'throughput_mbps': throughput,
+'avg_delay_ms': avg_delay
+})
+return pd.DataFrame(flows)
+def calculate_kpis(self, df: pd.DataFrame) -> Dict:
+"""
+Calcular KPIs agregados
+"""
+kpis = {
+'avg_pdr': df['pdr'].mean(),
+'avg_throughput': df['throughput_mbps'].mean(),
+'avg_delay': df['avg_delay_ms'].mean(),
+'total_flows': len(df),
+'successful_flows': len(df[df['rx_packets'] > 0])
+}
+return kpis
+def propose_optimization(self, kpis: Dict, task: str) -> str:
+"""
+Proponer optimizaciones usando redes neuronales
+"""
+print("🧠 Analizando y proponiendo optimizaciones...")
+prompt = f"""
+Eres un experto en optimización de redes con Deep Learning.
+**TAREA ORIGINAL:**
+
+--- Página 33 ---
+{task}
+**MÉTRICAS ACTUALES (Protocolo Baseline):**
+- PDR (Packet Delivery Ratio): {kpis['avg_pdr']:.2f}%
+- Throughput promedio: {kpis['avg_throughput']:.2f} Mbps
+- Delay promedio: {kpis['avg_delay']:.2f} ms
+- Flujos exitosos: {kpis['successful_flows']}/{kpis['total_flows']}
+**ANÁLISIS REQUERIDO:**
+1. **Evaluación del rendimiento actual**: ¿Es bueno/malo? ¿Por qué?
+2. **Identificación de cuellos de botella**: ¿Dónde está el problema?
+3. **Propuesta de arquitectura de red neuronal**:
+- ¿Qué tipo? (DQN, A3C, GNN, etc.)
+- ¿Qué observa? (Estado de la red)
+- ¿Qué decide? (Acciones de enrutamiento)
+- ¿Función de recompensa?
+4. **Plan de implementación**: Pasos concretos para integrar con NS-3
+Sé específico y técnico. Proporciona código conceptual si es posible.
+"""
+response = self.llm.invoke(prompt)
+return response.content
+def run(self, state: AgentState) -> Dict:
+"""
+Ejecutar el agente analista
+"""
+print("\n" + "="*60)
+print("🔬 AGENTE ANALISTA ACTIVADO")
+print("="*60)
+results_path = state.get('simulation_logs', '')
+if not results_path:
+return {
+'errors': ['No hay resultados de simulación para analizar']
+}
+try:
+# Parsear resultados
+df = self.parse_flowmonitor_xml(results_path)
+# Calcular KPIs
+kpis = self.calculate_kpis(df)
+print("\n📈 KPIs Calculados:")
+
+--- Página 34 ---
+for key, value in kpis.items():
+print(f" {key}: {value}")
+# Proponer optimización
+optimization_proposal = self.propose_optimization(
+kpis,
+state['task']
+)
+return {
+'analysis_results': {
+'dataframe': df.to_dict(),
+'kpis': kpis,
+'proposal': optimization_proposal
+},
+'metrics': kpis,
+'messages': [f"Análisis completado. PDR: {kpis['avg_pdr']:.2f}%"],
+'audit_trail': [{
+'agent': 'analyst',
+'action': 'analysis_completed',
+'kpis': kpis,
+'timestamp': str(pd.Timestamp.now())
+}]
+}
+except Exception as e:
+return {
+'errors': [f'Error en análisis: {str(e)}']
+}
+def analyst_node(state: AgentState) -> Dict:
+"""
+Nodo para LangGraph
+"""
+agent = AnalystAgent()
+return agent.run(state)
+12. AGENTE DE POST-PROCESADO Y VISUALIZACIÓN
+Crear agents/visualizer.py :
+python
+
+--- Página 35 ---
+"""
+Agente Visualizador: Generación de gráficos académicos
+"""
+import sys
+sys.path.append('../')
+from langchain_ollama import ChatOllama
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+from pathlib import Path
+from typing import Dict
+from config.settings import (
+OLLAMA_BASE_URL, MODEL_CODING, SIMULATIONS_DIR
+)
+from utils.state import AgentState
+class VisualizerAgent:
+"""
+Agente especializado en visualización de resultados
+"""
+def __init__(self):
+self.llm = ChatOllama(
+model=MODEL_CODING,
+temperature=0.1,
+base_url=OLLAMA_BASE_URL
+)
+self.plots_dir = SIMULATIONS_DIR / "plots"
+self.plots_dir.mkdir(parents=True, exist_ok=True)
+# Configurar estilo académico
+sns.set_style("whitegrid")
+plt.rcParams['figure.figsize'] = (10, 6)
+plt.rcParams['font.size'] = 12
+plt.rcParams['font.family'] = 'serif'
+def generate_plot_code(self, kpis: Dict, task: str) -> str:
+"""
+Generar código para visualización usando LLM
+"""
+prompt = f"""
+Genera código Python para visualizar métricas de red.
+
+--- Página 36 ---
+**DATOS DISPONIBLES:**
+{kpis}
+**OBJETIVO:**
+{task}
+**REQUISITOS:**
+1. Usa matplotlib y seaborn
+2. Estilo académico (IEEE)
+3. Genera 2-3 gráficos relevantes
+4. Guarda como PNG de alta resolución
+5. Incluye títulos, etiquetas y leyendas claras
+Devuelve SOLO el código Python ejecutable.
+"""
+response = self.llm.invoke(prompt)
+# Extraer código (simplificado, similar al CoderAgent)
+return response.content
+def create_standard_plots(self, df: pd.DataFrame, kpis: Dict) -> list:
+"""
+Crear gráficos estándar sin LLM
+"""
+plots = []
+# 1. Gráfico de PDR por flujo
+plt.figure()
+plt.bar(range(len(df)), df['pdr'], color='steelblue', alpha=0.7)
+plt.axhline(y=kpis['avg_pdr'], color='r', linestyle='--',
+label=f'Promedio: {kpis["avg_pdr"]:.2f}%')
+plt.xlabel('Flujo ID')
+plt.ylabel('PDR (%)')
+plt.title('Packet Delivery Ratio por Flujo')
+plt.legend()
+plt.tight_layout()
+plot_path = self.plots_dir / "pdr_per_flow.png"
+plt.savefig(plot_path, dpi=300)
+plt.close()
+plots.append(str(plot_path))
+# 2. Gráfico de Delay
+plt.figure()
+plt.hist(df['avg_delay_ms'], bins=20, color='coral', alpha=0.7, edgecolor='black')
+plt.axvline(x=kpis['avg_delay'], color='r', linestyle='--',
+
+--- Página 37 ---
+label=f'Promedio: {kpis["avg_delay"]:.2f} ms')
+plt.xlabel('Delay (ms)')
+plt.ylabel('Frecuencia')
+plt.title('Distribución de Delay End-to-End')
+plt.legend()
+plt.tight_layout()
+plot_path = self.plots_dir / "delay_distribution.png"
+plt.savefig(plot_path, dpi=300)
+plt.close()
+plots.append(str(plot_path))
+# 3. Gráfico de Throughput
+plt.figure()
+df_sorted = df.sort_values('throughput_mbps', ascending=False)
+plt.plot(df_sorted['throughput_mbps'].values, marker='o', color='green', alpha=0.6)
+plt.xlabel('Flujo (ordenado por throughput)')
+plt.ylabel('Throughput (Mbps)')
+plt.title('Throughput por Flujo')
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plot_path = self.plots_dir / "throughput_flows.png"
+plt.savefig(plot_path, dpi=300)
+plt.close()
+plots.append(str(plot_path))
+return plots
+def run(self, state: AgentState) -> Dict:
+"""
+Ejecutar el agente visualizador
+"""
+print("\n" + "="*60)
+print("📊 AGENTE VISUALIZADOR ACTIVADO")
+print("="*60)
+analysis_results = state.get('analysis_results', {})
+if not analysis_results:
+return {
+'errors': ['No hay resultados de análisis para visualizar']
+}
+try:
+# Reconstruir DataFrame
+df_dict = analysis_results.get('dataframe', {})
+
+--- Página 38 ---
+df = pd.DataFrame(df_dict)
+kpis = analysis_results.get('kpis', {})
+# Generar gráficos
+plots = self.create_standard_plots(df, kpis)
+print(f"✅ Generados {len(plots)} gráficos:")
+for plot in plots:
+print(f" 📈 {plot}")
+return {
+'plots_generated': plots,
+'audit_trail': [{
+'agent': 'visualizer',
+'action': 'plots_generated',
+'count': len(plots),
+'timestamp': str(pd.Timestamp.now())
+}]
+}
+except Exception as e:
+return {
+'errors': [f'Error en visualización: {str(e)}']
+}
+def visualizer_node(state: AgentState) -> Dict:
+"""
+Nodo para LangGraph
+"""
+agent = VisualizerAgent()
+return agent.run(state)
+13. SISTEMA DE BITÁCORA AUTOMÁTICA
+Crear utils/logbook.py :
+python
+
+--- Página 39 ---
+"""
+Sistema de Bitácora: Registro automático de toda la investigación
+"""
+import sqlite3
+import pandas as pd
+from pathlib import Path
+from typing import Dict, List
+import json
+from config.settings import LOGS_DIR
+class LogbookManager:
+"""
+Gestor de bitácora automática
+"""
+def __init__(self, db_path: Path = None):
+if db_path is None:
+db_path = LOGS_DIR / "bitacora_tesis.db"
+self.db_path = db_path
+self.conn = sqlite3.connect(str(db_path))
+self._init_db()
+def _init_db(self):
+"""
+Crear tablas si no existen
+"""
+cursor = self.conn.cursor()
+# Tabla de experimentos
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS experiments (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+timestamp TEXT,
+task TEXT,
+status TEXT,
+iteration_count INTEGER
+)
+''')
+# Tabla de acciones de agentes
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS agent_actions (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+--- Página 40 ---
+experiment_id INTEGER,
+agent_name TEXT,
+action_type TEXT,
+details TEXT,
+timestamp TEXT,
+FOREIGN KEY (experiment_id) REFERENCES experiments(id)
+)
+''')
+# Tabla de métricas
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS metrics (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+experiment_id INTEGER,
+metric_name TEXT,
+metric_value REAL,
+timestamp TEXT,
+FOREIGN KEY (experiment_id) REFERENCES experiments(id)
+)
+''')
+self.conn.commit()
+def create_experiment(self, task: str) -> int:
+"""
+Crear nuevo experimento
+"""
+cursor = self.conn.cursor()
+cursor.execute('''
+INSERT INTO experiments (timestamp, task, status, iteration_count)
+VALUES (datetime('now'), ?, 'running', 0)
+''', (task,))
+self.conn.commit()
+return cursor.lastrowid
+def log_agent_action(self, experiment_id: int, agent_name: str,
+action_type: str, details: Dict):
+"""
+Registrar acción de un agente
+"""
+cursor = self.conn.cursor()
+cursor.execute('''
+INSERT INTO agent_actions (experiment_id, agent_name, action_type, details, timestamp)
+VALUES (?, ?, ?, ?, datetime('now'))
+''', (experiment_id, agent_name, action_type, json.dumps(details)))
+self.conn.commit()
+
+--- Página 41 ---
+def log_metrics(self, experiment_id: int, metrics: Dict):
+"""
+Registrar métricas
+"""
+cursor = self.conn.cursor()
+for metric_name, metric_value in metrics.items():
+cursor.execute('''
+INSERT INTO metrics (experiment_id, metric_name, metric_value, timestamp)
+VALUES (?, ?, ?, datetime('now'))
+''', (experiment_id, metric_name, metric_value))
+self.conn.commit()
+def update_experiment_status(self, experiment_id: int, status: str):
+"""
+Actualizar estado del experimento
+"""
+cursor = self.conn.cursor()
+cursor.execute('''
+UPDATE experiments SET status = ? WHERE id = ?
+''', (status, experiment_id))
+self.conn.commit()
+def export_to_markdown(self, output_path: Path = None) -> str:
+"""
+Exportar bitácora completa a Markdown
+"""
+if output_path is None:
+output_path = LOGS_DIR / "bitacora_completa.md"
+# Leer datos
+experiments = pd.read_sql_query("SELECT * FROM experiments", self.conn)
+actions = pd.read_sql_query("SELECT * FROM agent_actions", self.conn)
+metrics = pd.read_sql_query("SELECT * FROM metrics", self.conn)
+# Generar Markdown
+md_content = "# Bitácora de Investigación Doctoral\n\n"
+md_content += f"**Generado:** {pd.Timestamp.now()}\n\n"
+md_content += "---\n\n"
+# Por cada experimento
+for _, exp in experiments.iterrows():
+md_content += f"## Experimento #{exp['id']}: {exp['task']}\n\n"
+md_content += f"- **Timestamp:** {exp['timestamp']}\n"
+md_content += f"- **Estado:** {exp['status']}\n"
+md_content += f"- **Iteraciones:** {exp['iteration_count']}\n\n"
+# Acciones del experimento
+
+--- Página 42 ---
+exp_actions = actions[actions['experiment_id'] == exp['id']]
+if len(exp_actions) > 0:
+md_content += "### Acciones de Agentes\n\n"
+for _, action in exp_actions.iterrows():
+md_content += f"- **{action['agent_name']}** ({action['timestamp']})\n"
+md_content += f" - Acción: {action['action_type']}\n"
+md_content += f" - Detalles: {action['details']}\n\n"
+# Métricas del experimento
+exp_metrics = metrics[metrics['experiment_id'] == exp['id']]
+if len(exp_metrics) > 0:
+md_content += "### Métricas Obtenidas\n\n"
+md_content += "| Métrica | Valor |\n"
+md_content += "|---------|-------|\n"
+for _, metric in exp_metrics.iterrows():
+md_content += f"| {metric['metric_name']} | {metric['metric_value']:.2f} |\n"
+md_content += "\n"
+md_content += "---\n\n"
+# Guardar archivo
+with open(output_path, 'w', encoding='utf-8') as f:
+f.write(md_content)
+return str(output_path)
+def close(self):
+"""Cerrar conexión"""
+self.conn.close()
+PARTE IV: AUTOMATIZACIÓN Y OPERACIÓN
+14. FLUJOS DE TRABAJO AUTOMATIZADOS
+14.1 Implementación del Supervisor (LangGraph)
+Crear supervisor.py :
+python
+
+--- Página 43 ---
+"""
+Supervisor: Orquestador principal del sistema multi-agente
+"""
+from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.sqlite import SqliteSaver
+import sqlite3
+from typing import Literal
+import pandas as pd
+from utils.state import AgentState
+from agents.researcher import research_node
+from agents.coder import coder_node
+from agents.simulator import simulator_node
+from agents.analyst import analyst_node
+from agents.visualizer import visualizer_node
+from config.settings import LOGS_DIR
+class SupervisorOrchestrator:
+"""
+Orquestador central del sistema A2A
+"""
+def __init__(self):
+# Crear grafo de estados
+self.workflow = StateGraph(AgentState)
+# Añadir nodos (agentes)
+self.workflow.add_node("researcher", research_node)
+self.workflow.add_node("coder", coder_node)
+self.workflow.add_node("simulator", simulator_node)
+self.workflow.add_node("analyst", analyst_node)
+self.workflow.add_node("visualizer", visualizer_node)
+# Definir flujo
+self._define_workflow()
+# Configurar persistencia (bitácora automática)
+db_path = LOGS_DIR / "langgraph_checkpoints.db"
+memory = SqliteSaver(sqlite3.connect(str(db_path), check_same_thread=False))
+# Compilar grafo
+self.app = self.workflow.compile(checkpointer=memory)
+def _define_workflow(self):
+"""
+
+--- Página 44 ---
+Definir el flujo de trabajo entre agentes
+"""
+# Punto de entrada
+self.workflow.set_entry_point("researcher")
+# Flujo lineal básico
+self.workflow.add_edge("researcher", "coder")
+# Lógica condicional: ¿El código es válido?
+self.workflow.add_conditional_edges(
+"coder",
+self._should_retry_code,
+{
+"simulator": "simulator",
+"retry": "coder",
+"end": END
+}
+)
+# Desde simulador: ¿La simulación fue exitosa?
+self.workflow.add_conditional_edges(
+"simulator",
+self._should_retry_simulation,
+{
+"analyst": "analyst",
+"retry_code": "coder",
+"end": END
+}
+)
+# Análisis → Visualización
+self.workflow.add_edge("analyst", "visualizer")
+# Visualización → Fin
+self.workflow.add_edge("visualizer", END)
+def _should_retry_code(self, state: AgentState) -> Literal["simulator", "retry", "end"]:
+"""
+Decidir si reintentar generación de código
+"""
+# Si hay errores y no se excedió límite de iteraciones
+if state.get('errors') and state['iteration_count'] < state['max_iterations']:
+return "retry"
+# Si código validado
+if state.get('code_validated', False):
+return "simulator"
+
+--- Página 45 ---
+# Si se excedió límite
+return "end"
+def _should_retry_simulation(self, state: AgentState) -> Literal["analyst", "retry_code", "end"]:
+"""
+Decidir qué hacer después de simulación
+"""
+sim_status = state.get('simulation_status', '')
+# Si simulación exitosa
+if sim_status == 'completed':
+return "analyst"
+# Si falló y no se excedió límite
+if sim_status == 'failed' and state['iteration_count'] < state['max_iterations']:
+return "retry_code"
+# Si se excedió límite
+return "end"
+def run_experiment(self, task: str, thread_id: str = None):
+"""
+Ejecutar un experimento completo
+"""
+from uuid import uuid4
+if thread_id is None:
+thread_id = str(uuid4())
+config = {
+"configurable": {
+"thread_id": thread_id
+}
+}
+# Estado inicial
+initial_state = {
+'task': task,
+'research_notes': [],
+'papers_found': [],
+'code_snippet': '',
+'code_validated': False,
+'simulation_logs': '',
+'simulation_status': 'pending',
+'analysis_results': {},
+'metrics': {},
+
+--- Página 46 ---
+'plots_generated': [],
+'errors': [],
+'iteration_count': 0,
+'max_iterations': 5,
+'audit_trail': [],
+'messages': []
+}
+print("\n" + "="*80)
+print("🚀 INICIANDO EXPERIMENTO A2A")
+print("="*80)
+print(f"📋 Tarea: {task}")
+print(f"🆔 Thread ID: {thread_id}")
+print("="*80 + "\n")
+# Ejecutar workflow
+try:
+for event in self.app.stream(initial_state, config=config):
+for node_name, node_output in event.items():
+print(f"\n✓ Completado: {node_name}")
+# Mostrar errores si existen
+if 'errors' in node_output and node_output['errors']:
+print(f" ⚠ Errores: {node_output['errors'][-1]}")
+# Obtener estado final
+final_state = self.app.get_state(config)
+print("\n" + "="*80)
+print("🎉 EXPERIMENTO COMPLETADO")
+print("="*80)
+# Resumen de resultados
+if final_state.values.get('metrics'):
+print("\n📊 MÉTRICAS FINALES:")
+for key, value in final_state.values['metrics'].items():
+print(f" {key}: {value}")
+if final_state.values.get('plots_generated'):
+print(f"\n📈 Gráficos generados: {len(final_state.values['plots_generated'])}")
+return final_state.values
+except Exception as e:
+print(f"\n❌ ERROR EN EXPERIMENTO: {str(e)}")
+import traceback
+
+--- Página 47 ---
+traceback.print_exc()
+return None
+14.2 Script Principal de Ejecución
+Crear main.py :
+python
+
+--- Página 48 ---
+#!/usr/bin/env python3
+"""
+Sistema Multi-Agente A2A para Tesis Doctoral
+Punto de entrada principal
+"""
+import sys
+import argparse
+from pathlib import Path
+# Añadir directorio raíz al path
+sys.path.insert(0, str(Path(__file__).parent))
+from supervisor import SupervisorOrchestrator
+from utils.logbook import LogbookManager
+from config.settings import LOGS_DIR
+def main():
+"""
+Función principal
+"""
+parser = argparse.ArgumentParser(
+description='Sistema Multi-Agente A2A para Investigación en Redes'
+)
+parser.add_argument(
+'--task',
+type=str,
+required=True,
+help='Descripción de la tarea de investigación'
+)
+parser.add_argument(
+'--thread-id',
+type=str,
+default=None,
+help='ID de thread para continuar experimento previo'
+)
+parser.add_argument(
+'--export-logbook',
+action='store_true',
+help='Exportar bitácora completa a Markdown'
+)
+args = parser.parse_args()
+
+--- Página 49 ---
+# Si solo se quiere exportar bitácora
+if args.export_logbook:
+logbook = LogbookManager()
+output_path = logbook.export_to_markdown()
+print(f"✅ Bitácora exportada a: {output_path}")
+logbook.close()
+return
+# Crear orquestador
+supervisor = SupervisorOrchestrator()
+# Ejecutar experimento
+result = supervisor.run_experiment(
+task=args.task,
+thread_id=args.thread_id
+)
+if result:
+print("\n✅ Experimento finalizado exitosamente")
+# Exportar bitácora automáticamente
+logbook = LogbookManager()
+output_path = logbook.export_to_markdown()
+print(f"📚 Bitácora actualizada: {output_path}")
+logbook.close()
+else:
+print("\n❌ Experimento falló")
+sys.exit(1)
+if __name__ == "__main__":
+main()
+Hacer ejecutable:
+bash
+chmod +x main.py
+14.3 Ejemplos de Uso
+bash
+
+--- Página 50 ---
+# Activar entorno virtual
+cd ~/tesis-a2a/sistema-a2a
+source venv-a2a/bin/activate
+# Experimento 1: Comparación básica
+python main.py --task "Comparar latencia entre AODV y OLSR en red vehicular con 50 nodos"
+# Experimento 2: Optimización con GNN
+python main.py --task "Implementar y evaluar Graph Neural Network para optimizar enrutamiento en Smart City con 100 disp
+# Experimento 3: Análisis de throughput
+python main.py --task "Analizar impacto de movilidad de nodos en throughput usando protocolo DSDV"
+# Exportar bitácora completa
+python main.py --export-logbook
+15. MONITOREO Y DEBUGGING
+15.1 Script de Monitoreo en Tiempo Real
+Crear monitor.py :
+python
+
+--- Página 51 ---
+#!/usr/bin/env python3
+"""
+Monitor de experimentos en tiempo real
+"""
+import sqlite3
+import pandas as pd
+from pathlib import Path
+import time
+from datetime import datetime
+import sys
+from config.settings import LOGS_DIR
+def monitor_experiments(refresh_interval=5):
+"""
+Monitorear experimentos en tiempo real
+"""
+db_path = LOGS_DIR / "langgraph_checkpoints.db"
+if not db_path.exists():
+print("❌ No se encontró base de datos de checkpoints")
+return
+print("🔍 Monitoreando experimentos... (Ctrl+C para salir)\n")
+try:
+while True:
+conn = sqlite3.connect(str(db_path))
+# Leer checkpoints
+try:
+df = pd.read_sql_query("""
+SELECT * FROM checkpoints
+ORDER BY checkpoint_id DESC
+LIMIT 10
+""", conn)
+print(f"\n{'='*80}")
+print(f"Actualizado: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+print(f"{'='*80}")
+if len(df) > 0:
+print(f"\n📊 Últimos 10 checkpoints:")
+print(df[['thread_id', 'checkpoint_id']].to_string(index=False))
+else:
+
+--- Página 52 ---
+print("\n⏳ No hay checkpoints aún...")
+except Exception as e:
+print(f"\n⚠ Error leyendo checkpoints: {e}")
+conn.close()
+time.sleep(refresh_interval)
+except KeyboardInterrupt:
+print("\n\n✋ Monitor detenido")
+if __name__ == "__main__":
+monitor_experiments()
+15.2 Script de Debugging
+Crear debug_tools.py :
+python
+
+--- Página 53 ---
+#!/usr/bin/env python3
+"""
+Herramientas de debugging para el sistema A2A
+"""
+import sqlite3
+import json
+from pathlib import Path
+import argparse
+from config.settings import LOGS_DIR
+def inspect_checkpoint(thread_id: str):
+"""
+Inspeccionar un checkpoint específico
+"""
+db_path = LOGS_DIR / "langgraph_checkpoints.db"
+conn = sqlite3.connect(str(db_path))
+cursor = conn.cursor()
+cursor.execute("""
+SELECT * FROM checkpoints
+WHERE thread_id = ?
+ORDER BY checkpoint_id DESC
+LIMIT 1
+""", (thread_id,))
+result = cursor.fetchone()
+if result:
+print(f"\n{'='*80}")
+print(f"CHECKPOINT: {thread_id}")
+print(f"{'='*80}\n")
+# Mostrar columnas
+columns = [desc[0] for desc in cursor.description]
+for col, val in zip(columns, result):
+print(f"{col}: {val}")
+else:
+print(f"❌ No se encontró checkpoint para thread_id: {thread_id}")
+conn.close()
+def list_all_threads():
+"""
+Listar todos los threads disponibles
+
+--- Página 54 ---
+"""
+db_path = LOGS_DIR / "langgraph_checkpoints.db"
+if not db_path.exists():
+print("❌ No existe base de datos de checkpoints")
+return
+conn = sqlite3.connect(str(db_path))
+cursor = conn.cursor()
+cursor.execute("SELECT DISTINCT thread_id FROM checkpoints")
+threads = cursor.fetchall()
+print(f"\n📋 Threads disponibles ({len(threads)}):\n")
+for thread in threads:
+print(f" - {thread[0]}")
+conn.close()
+def validate_setup():
+"""
+Validar que todo el setup esté correcto
+"""
+print("\n🔍 VALIDANDO CONFIGURACIÓN DEL SISTEMA")
+print("="*80)
+checks = []
+# 1. Verificar Ollama
+try:
+import requests
+response = requests.get("http://localhost:11434/api/tags", timeout=2)
+if response.status_code == 200:
+checks.append(("✅", "Ollama", "Corriendo"))
+else:
+checks.append(("❌", "Ollama", "No responde"))
+except:
+checks.append(("❌", "Ollama", "No disponible"))
+# 2. Verificar NS-3
+from config.settings import NS3_ROOT
+if NS3_ROOT.exists():
+checks.append(("✅", "NS-3", f"Encontrado en {NS3_ROOT}"))
+else:
+checks.append(("❌", "NS-3", "No encontrado"))
+
+--- Página 55 ---
+# 3. Verificar directorios
+from config.settings import SIMULATIONS_DIR, DATA_DIR, LOGS_DIR
+for name, path in [("Simulaciones", SIMULATIONS_DIR),
+("Datos", DATA_DIR),
+("Logs", LOGS_DIR)]:
+if path.exists():
+checks.append(("✅", f"Dir {name}", str(path)))
+else:
+checks.append(("❌", f"Dir {name}", "No existe"))
+# 4. Verificar paquetes Python
+required_packages = [
+'langgraph', 'langchain', 'chromadb',
+'pandas', 'matplotlib', 'semanticscholar'
+]
+for package in required_packages:
+try:
+__import__(package)
+checks.append(("✅", f"Paquete {package}", "Instalado"))
+except ImportError:
+checks.append(("❌", f"Paquete {package}", "NO instalado"))
+# Mostrar resultados
+print()
+for status, component, message in checks:
+print(f"{status} {component:20s} : {message}")
+print("\n" + "="*80)
+failed = sum(1 for c in checks if c[0] == "❌")
+if failed == 0:
+print("✅ Todos los componentes están correctos")
+else:
+print(f"⚠ {failed} componentes requieren atención")
+def main():
+parser = argparse.ArgumentParser(description='Herramientas de debugging')
+subparsers = parser.add_subparsers(dest='command')
+# Comando: inspect
+inspect_parser = subparsers.add_parser('inspect', help='Inspeccionar checkpoint')
+inspect_parser.add_argument('thread_id', help='ID del thread')
+# Comando: list
+subparsers.add_parser('list', help='Listar todos los threads')
+
+--- Página 56 ---
+# Comando: validate
+subparsers.add_parser('validate', help='Validar configuración del sistema')
+args = parser.parse_args()
+if args.command == 'inspect':
+inspect_checkpoint(args.thread_id)
+elif args.command == 'list':
+list_all_threads()
+elif args.command == 'validate':
+validate_setup()
+else:
+parser.print_help()
+if __name__ == "__main__":
+main()
+Uso:
+bash
+# Validar configuración
+python debug_tools.py validate
+# Listar experimentos
+python debug_tools.py list
+# Inspeccionar experimento específico
+python debug_tools.py inspect <thread-id>
+16. OPTIMIZACIÓN Y ESCALABILIDAD
+16.1 Ejecución Paralela de Simulaciones
+Para experimentos que requieren múltiples simulaciones (barrido de parámetros), crear parallel_runner.py :
+python
+
+--- Página 57 ---
+#!/usr/bin/env python3
+"""
+Ejecutor paralelo de simulaciones
+"""
+import multiprocessing as mp
+from pathlib import Path
+import pandas as pd
+from typing import List, Dict
+from supervisor import SupervisorOrchestrator
+def run_single_experiment(params: Dict) -> Dict:
+"""
+Ejecutar un experimento individual
+"""
+task = params['task']
+thread_id = params.get('thread_id')
+supervisor = SupervisorOrchestrator()
+result = supervisor.run_experiment(task, thread_id)
+return {
+'params': params,
+'result': result
+}
+def run_parameter_sweep(base_task: str, parameter_name: str,
+parameter_values: List) -> pd.DataFrame:
+"""
+Ejecutar barrido de parámetros en paralelo
+"""
+# Crear lista de tareas
+tasks = []
+for value in parameter_values:
+task = f"{base_task} con {parameter_name}={value}"
+tasks.append({
+'task': task,
+parameter_name: value
+})
+# Ejecutar en paralelo
+num_processes = min(mp.cpu_count() - 1, len(tasks))
+print(f"🚀 Ejecutando {len(tasks)} experimentos en {num_processes} procesos")
+
+--- Página 58 ---
+with mp.Pool(processes=num_processes) as pool:
+results = pool.map(run_single_experiment, tasks)
+# Consolidar resultados
+data = []
+for res in results:
+if res['result'] and res['result'].get('metrics'):
+row = {parameter_name: res['params'][parameter_name]}
+row.update(res['result']['metrics'])
+data.append(row)
+return pd.DataFrame(data)
+# Ejemplo de uso
+if __name__ == "__main__":
+# Barrido de número de nodos
+results_df = run_parameter_sweep(
+base_task="Evaluar AODV en red vehicular",
+parameter_name="num_nodos",
+parameter_values=[25, 50, 75, 100, 150]
+)
+print("\n📊 RESULTADOS DEL BARRIDO:")
+print(results_df)
+# Guardar resultados
+results_df.to_csv("barrido_nodos.csv", index=False)
+16.2 Uso de Google Colab como Respaldo
+Crear colab_setup.py para configurar Colab:
+python
+
+--- Página 59 ---
+"""
+Script para ejecutar en Google Colab
+"""
+# 1. Instalar Ollama en Colab
+!curl -fsSL https://ollama.com/install.sh | sh
+# 2. Iniciar Ollama en background
+import subprocess
+import time
+ollama_process = subprocess.Popen(
+["ollama", "serve"],
+stdout=subprocess.PIPE,
+stderr=subprocess.PIPE
+)
+time.sleep(5) # Esperar a que inicie
+# 3. Descargar modelos
+!ollama pull qwen2.5-coder:7b
+!ollama pull llama3.3:8b
+# 4. Instalar ngrok para exponer puerto
+!pip install pyngrok
+from pyngrok import ngrok
+# Exponer Ollama
+public_url = ngrok.connect(11434)
+print(f"🌐 Ollama público en: {public_url}")
+# 5. Clonar repositorio del proyecto
+!git clone https://github.com/tu-usuario/tesis-a2a.git
+%cd tesis-a2a/sistema-a2a
+# 6. Instalar dependencias
+!pip install -r requirements.txt
+# 7. Ejecutar experimento
+!python main.py --task "Tu tarea de investigación"
+
+--- Página 60 ---
+GUÍA DE AUTOMATIZACIÓN COMPLETA
+17. AUTOMATIZACIÓN DEL USO DIARIO
+17.1 Script de Inicio Rápido
+Crear quick_start.sh :
+bash
+
+--- Página 61 ---
+#!/bin/bash
+# Script de inicio rápido del sistema A2A
+echo "🚀 Iniciando Sistema A2A para Tesis Doctoral"
+echo "=============================================="
+# 1. Activar entorno virtual
+cd ~/tesis-a2a/sistema-a2a
+source venv-a2a/bin/activate
+# 2. Verificar que Ollama esté corriendo
+if ! curl -s http://localhost:11434/api/tags > /dev/null; then
+echo "⚠ Ollama no está corriendo. Iniciando..."
+ollama serve &
+sleep 5
+fi
+# 3. Validar configuración
+python debug_tools.py validate
+# 4. Mostrar menú
+echo ""
+echo "Sistema listo. Opciones:"
+echo "1. Ejecutar experimento interactivo"
+echo "2. Ejecutar experimento desde archivo"
+echo "3. Ver bitácora"
+echo "4. Monitorear experimentos"
+echo ""
+read -p "Selecciona opción (1-4): " option
+case $option in
+1)
+read -p "Describe tu experimento: " task
+python main.py --task "$task"
+;;
+2)
+read -p "Ruta al archivo con tareas: " file
+while IFS= read -r task; do
+python main.py --task "$task"
+done < "$file"
+;;
+3)
+python main.py --export-logbook
+xdg-open logs/bitacora_completa.md
+
+--- Página 62 ---
+;;
+4)
+python monitor.py
+;;
+*)
+echo "Opción inválida"
+;;
+esac
+Hacer ejecutable:
+bash
+chmod +x quick_start.sh
+17.2 Archivo de Tareas para Automatización
+Crear experimentos.txt :
+Comparar PDR entre AODV y OLSR con 50 nodos en grid 1000x1000m
+Evaluar impacto de velocidad de nodos (20, 40, 60 km/h) en throughput
+Implementar DQN para selección de siguiente salto en MANET
+Analizar overhead de control en protocolos reactivos vs proactivos
+Proponer GNN para predicción de congestión en Smart City
+Ejecutar todas las tareas:
+bash
+./quick_start.sh
+# Seleccionar opción 2
+# Ingresar: experimentos.txt
+17.3 Cron Job para Experimentos Nocturnos
+Editar crontab:
+bash
+crontab -e
+Añadir:
+cron
+
+--- Página 63 ---
+# Ejecutar experimentos todas las noches a las 2 AM
+0 2 * * * cd ~/tesis-a2a/sistema-a2a && source venv-a2a/bin/activate && python batch_runner.py --file experimentos.txt >> l
+Crear batch_runner.py :
+python
+
+--- Página 64 ---
+#!/usr/bin/env python3
+"""
+Ejecutor batch para cron jobs
+"""
+import sys
+import argparse
+from pathlib import Path
+from main import SupervisorOrchestrator
+from utils.logbook import LogbookManager
+def run_batch(tasks_file: Path):
+"""
+Ejecutar múltiples tareas desde archivo
+"""
+with open(tasks_file, 'r') as f:
+tasks = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+print(f"📋 Ejecutando {len(tasks)} tareas...")
+supervisor = SupervisorOrchestrator()
+for i, task in enumerate(tasks, 1):
+print(f"\n{'='*80}")
+print(f"Tarea {i}/{len(tasks)}: {task}")
+print(f"{'='*80}\n")
+try:
+supervisor.run_experiment(task)
+except Exception as e:
+print(f"❌ Error en tarea {i}: {e}")
+continue
+# Exportar bitácora
+logbook = LogbookManager()
+output_path = logbook.export_to_markdown()
+print(f"\n✅ Bitácora exportada: {output_path}")
+logbook.close()
+if __name__ == "__main__":
+parser = argparse.ArgumentParser()
+parser.add_argument('--file', required=True, help='Archivo con tareas')
+args = parser.parse_args()
+
+--- Página 65 ---
+run_batch(Path(args.file))
+18. CHECKLIST DE IMPLEMENTACIÓN COMPLETA
+markdown
+
+--- Página 66 ---
+## FASE 1: Infraestructura Base (Semana 1-2)
+- [ ] Instalar y configurar Ollama
+- [ ] Descargar modelos LLM necesarios
+- [ ] Compilar NS-3 con Python bindings
+- [ ] Verificar instalación de ns3-ai
+- [ ] Crear estructura de proyecto Python
+- [ ] Instalar dependencias (LangGraph, etc.)
+## FASE 2: Agentes Básicos (Semana 3-4)
+- [ ] Implementar Agente Investigador
+- [ ] Configurar ChromaDB
+- [ ] Test de búsqueda en Semantic Scholar
+- [ ] Implementar Agente Programador
+- [ ] Test de generación de código NS-3
+## FASE 3: Simulación (Semana 5-6)
+- [ ] Implementar Agente Ejecutor
+- [ ] Test de ejecución de simulación simple
+- [ ] Configurar manejo de errores
+- [ ] Implementar Agente Analista
+- [ ] Test de parsing de FlowMonitor XML
+## FASE 4: Visualización y Bitácora (Semana 7)
+- [ ] Implementar Agente Visualizador
+- [ ] Configurar sistema de bitácora
+- [ ] Test de exportación a Markdown
+## FASE 5: Orquestación (Semana 8-9)
+- [ ] Implementar Supervisor LangGraph
+- [ ] Configurar flujos condicionales
+- [ ] Test de experimento end-to-end
+- [ ] Ajustar manejo de errores
+## FASE 6: Automatización (Semana 10)
+- [ ] Crear scripts de inicio rápido
+- [ ] Configurar ejecución paralela
+- [ ] Setup de cron jobs
+- [ ] Documentar uso
+## FASE 7: Optimización IA (Semana 11-12)
+- [ ] Integrar ns3-ai con PyTorch
+- [ ] Implementar entorno DRL básico
+- [ ] Test de Q-Learning simple
+- [ ] Explorar arquitecturas GNN
+## FASE 8: Producción (Semana 13+)
+
+--- Página 67 ---
+- [ ] Ejecutar experimentos reales
+- [ ] Análisis de resultados
+- [ ] Iteración basada en findings
+- [ ] Documentación de tesis
+19. RESOLUCIÓN DE PROBLEMAS COMUNES
+Problema 1: Ollama no responde
+bash
+# Verificar estado
+systemctl status ollama
+# Reiniciar
+systemctl restart ollama
+# Ver logs
+journalctl -u ollama -f
+Problema 2: NS-3 no compila
+bash
+# Limpiar build
+cd ~/tesis-a2a/ns-allinone-3.43/ns-3.43
+./ns3 clean
+# Verificar dependencias
+sudo apt install g++ python3-dev cmake
+# Reconfigurar
+./ns3 configure --enable-python-bindings
+# Rebuild
+./ns3 build
+Problema 3: Error en imports de Python
+python
+# Añadir path de NS-3 manualmente
+import sys
+sys.path.append('/home/tu_usuario/tesis-a2a/ns-allinone-3.43/ns-3.43/build/lib/python3')
+
+--- Página 68 ---
+Problema 4: ChromaDB da error de permisos
+bash
+# Cambiar permisos del directorio
+chmod -R 755 ~/tesis-a2a/sistema-a2a/data/vector_db
+Problema 5: LLM genera código incorrecto repetidamente
+Solución: Ajustar el prompt del agente programador con ejemplos específicos:
+python
+# En agents/coder.py, añadir ejemplos al prompt
+examples = """
+EJEMPLO 1 - Red WiFi básica:
+```python
+import ns.core
+import ns.network
+import ns.wifi
+nodes = ns.network.NodeContainer()
+nodes.Create(10)
+wifi = ns.wifi.WifiHelper()
+# ... configuración
+```
+EJEMPLO 2 - Movilidad:
+```python
+mobility = ns.mobility.MobilityHelper()
+mobility.SetMobilityModel("ns3::RandomWaypointMobilityModel")
+mobility.Install(nodes)
+```
+"""
+20. GUÍA DE REFERENCIA RÁPIDA
+Comandos Esenciales
+bash
+
+--- Página 69 ---
+# Iniciar sistema completo
+cd ~/tesis-a2a/sistema-a2a
+./quick_start.sh
+# Ejecutar experimento único
+python main.py --task "Tu descripción aquí"
+# Ejecutar batch de experimentos
+python batch_runner.py --file experimentos.txt
+# Monitorear en tiempo real
+python monitor.py
+# Validar configuración
+python debug_tools.py validate
+# Ver lista de experimentos
+python debug_tools.py list
+# Inspeccionar experimento específico
+python debug_tools.py inspect <thread-id>
+# Exportar bitácora
+python main.py --export-logbook
+Estructura de Directorios
+
+--- Página 70 ---
+~/tesis-a2a/
+├── ns-allinone-3.43/ # NS-3 compilado
+│ └── ns-3.43/
+│ ├── scratch/ # Scripts generados aquí
+│ └── resultados.xml # Resultados de simulación
+│
+└── sistema-a2a/ # Sistema de agentes
+├── agents/ # Agentes individuales
+├── config/ # Configuración
+├── utils/ # Utilidades
+├── logs/ # Logs y bitácora
+├── data/ # Papers y ChromaDB
+├── simulations/
+│ ├── scripts/ # Scripts guardados
+│ ├── results/ # XMLs de resultados
+│ └── plots/ # Gráficos generados
+├── main.py # Punto de entrada
+├── supervisor.py # Orquestador
+└── quick_start.sh # Inicio rápido
+Flujo de Trabajo Típico
+1. Mañana: Definir tareas en experimentos.txt
+2. Día: Ejecutar: python batch_runner.py --file experimentos.txt
+3. Tarde: Revisar resultados en simulations/plots/
+4. Noche: Exportar bitácora: python main.py --export-logbook
+5. Revisar: Leer logs/bitacora_completa.md para documentar tesis
+21. INTEGRACIÓN AVANZADA: REDES NEURONALES
+21.1 Implementación de DQN para Enrutamiento
+Crear agents/dqn_routing.py :
+python
+
+--- Página 71 ---
+"""
+Agente DQN para optimización de enrutamiento
+"""
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import numpy as np
+from collections import deque
+import random
+class DQNNetwork(nn.Module):
+"""
+Red neuronal para Q-Learning
+"""
+def __init__(self, state_size, action_size):
+super(DQNNetwork, self).__init__()
+self.fc1 = nn.Linear(state_size, 128)
+self.fc2 = nn.Linear(128, 128)
+self.fc3 = nn.Linear(128, action_size)
+def forward(self, x):
+x = torch.relu(self.fc1(x))
+x = torch.relu(self.fc2(x))
+return self.fc3(x)
+class DQNAgent:
+"""
+Agente DQN para decisiones de enrutamiento
+"""
+def __init__(self, state_size, action_size):
+self.state_size = state_size
+self.action_size = action_size
+# Hiperparámetros
+self.gamma = 0.95 # Factor de descuento
+self.epsilon = 1.0 # Exploración
+self.epsilon_min = 0.01
+self.epsilon_decay = 0.995
+self.learning_rate = 0.001
+# Memoria de replay
+self.memory = deque(maxlen=2000)
+# Redes
+
+--- Página 72 ---
+self.model = DQNNetwork(state_size, action_size)
+self.target_model = DQNNetwork(state_size, action_size)
+self.update_target_model()
+# Optimizador
+self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+def update_target_model(self):
+"""Copiar pesos de modelo principal a target"""
+self.target_model.load_state_dict(self.model.state_dict())
+def remember(self, state, action, reward, next_state, done):
+"""Guardar experiencia en memoria"""
+self.memory.append((state, action, reward, next_state, done))
+def act(self, state):
+"""Seleccionar acción usando epsilon-greedy"""
+if np.random.rand() <= self.epsilon:
+return random.randrange(self.action_size)
+state = torch.FloatTensor(state).unsqueeze(0)
+with torch.no_grad():
+q_values = self.model(state)
+return q_values.argmax().item()
+def replay(self, batch_size):
+"""Entrenar con batch de experiencias"""
+if len(self.memory) < batch_size:
+return
+minibatch = random.sample(self.memory, batch_size)
+for state, action, reward, next_state, done in minibatch:
+state = torch.FloatTensor(state).unsqueeze(0)
+next_state = torch.FloatTensor(next_state).unsqueeze(0)
+target = reward
+if not done:
+target += self.gamma * self.target_model(next_state).max().item()
+current_q = self.model(state)
+target_q = current_q.clone()
+target_q[0][action] = target
+# Backpropagation
+loss = nn.MSELoss()(current_q, target_q)
+self.optimizer.zero_grad()
+
+--- Página 73 ---
+loss.backward()
+self.optimizer.step()
+# Decay epsilon
+if self.epsilon > self.epsilon_min:
+self.epsilon *= self.epsilon_decay
+def save(self, filename):
+"""Guardar modelo"""
+torch.save(self.model.state_dict(), filename)
+def load(self, filename):
+"""Cargar modelo"""
+self.model.load_state_dict(torch.load(filename))
+21.2 Script de NS-3 con ns3-ai para DQN
+Crear template en agents/coder.py :
+python
+
+--- Página 74 ---
+# Template para integración DQN con NS-3
+ns3_ai_template = '''#!/usr/bin/env python3
+"""
+Simulación NS-3 con agente DQN
+"""
+import sys
+sys.path.append('build/lib/python3')
+import ns.core
+import ns.network
+import ns.internet
+import ns.applications
+from ns3ai_gym_env import Ns3AiGymEnv
+# Definir entorno Gym
+class RoutingEnv(Ns3AiGymEnv):
+def __init__(self):
+super().__init__()
+self.state_size = 10 # Ej: longitud cola, energía, vecinos
+self.action_size = 5 # Número de vecinos posibles
+def get_state(self):
+"""Obtener estado actual de la red"""
+# Extraer de NS-3: métricas de nodos
+state = []
+# ... lógica para obtener estado
+return state
+def take_action(self, action):
+"""Aplicar acción (seleccionar siguiente salto)"""
+# Modificar tabla de enrutamiento en NS-3
+pass
+def get_reward(self):
+"""Calcular recompensa basada en métricas"""
+# Ej: -delay - 0.1*energy_consumed + 10*packet_delivered
+return reward
+def main():
+# Crear entorno
+env = RoutingEnv()
+# Cargar agente DQN (entrenado previamente)
+from dqn_routing import DQNAgent
+agent = DQNAgent(state_size=10, action_size=5)
+
+--- Página 75 ---
+agent.load('dqn_model.pth')
+# Loop de simulación
+state = env.reset()
+done = False
+while not done:
+action = agent.act(state)
+next_state, reward, done = env.step(action)
+state = next_state
+print("Simulación con DQN completada")
+if __name__ == "__main__":
+main()
+'''
+21.3 Entrenamiento del Agente DQN
+Crear train_dqn.py :
+python
+
+--- Página 76 ---
+#!/usr/bin/env python3
+"""
+Entrenar agente DQN para enrutamiento
+"""
+from agents.dqn_routing import DQNAgent
+import numpy as np
+def train_dqn(episodes=1000):
+"""
+Entrenar agente DQN
+"""
+# Definir tamaños
+state_size = 10 # Ej: [queue_length, energy, num_neighbors, ...]
+action_size = 5 # Número de vecinos posibles
+agent = DQNAgent(state_size, action_size)
+batch_size = 32
+for episode in range(episodes):
+# Simulación simplificada (reemplazar con NS-3 real)
+state = np.random.rand(state_size)
+total_reward = 0
+for step in range(100): # 100 pasos por episodio
+# Seleccionar acción
+action = agent.act(state)
+# Simular resultado (reemplazar con NS-3)
+next_state = np.random.rand(state_size)
+reward = np.random.randn() # Recompensa simulada
+done = (step == 99)
+# Guardar experiencia
+agent.remember(state, action, reward, next_state, done)
+state = next_state
+total_reward += reward
+if done:
+agent.update_target_model()
+print(f"Episodio: {episode+1}/{episodes}, "
+f"Recompensa: {total_reward:.2f}, "
+f"Epsilon: {agent.epsilon:.3f}")
+break
+
+--- Página 77 ---
+# Entrenar
+agent.replay(batch_size)
+# Guardar cada 100 episodios
+if (episode + 1) % 100 == 0:
+agent.save(f'models/dqn_episode_{episode+1}.pth')
+print("\n✅ Entrenamiento completado")
+agent.save('models/dqn_final.pth')
+if __name__ == "__main__":
+train_dqn()
+22. ROADMAP DE INVESTIGACIÓN DOCTORAL
+Año 1: Fundamentos y Baseline
+Q1-Q2: Setup y Protocolos Tradicionales
+Implementar sistema A2A completo
+Simular protocolos baseline (AODV, OLSR, DSDV)
+Establecer métricas de referencia
+Publicar paper de metodología A2A
+Q3-Q4: Primeras Optimizaciones
+Implementar Q-Learning básico
+Comparar con protocolos tradicionales
+Identificar limitaciones de DRL clásico
+Año 2: Innovación con GNN
+Q1-Q2: Desarrollo de GNN
+Implementar arquitectura RouteNet adaptada
+Entrenar con topologías variadas
+Validar generalización
+Q3-Q4: Evaluación Exhaustiva
+Experimentos a gran escala
+Comparación con estado del arte
+
+--- Página 78 ---
+Publicar paper principal (GNN para Smart Cities)
+Año 3: Consolidación y Escritura
+Q1-Q2: Refinamiento
+Optimizar hiperparámetros
+Validación en escenarios reales
+Análisis de complejidad computacional
+Q3-Q4: Tesis
+Redacción de tesis doctoral
+Preparación de defensa
+Publicaciones finales
+23. RECURSOS ADICIONALES Y COMUNIDAD
+Documentación Oficial
+LangGraph: https://langchain-ai.github.io/langgraph/
+NS-3: https://www.nsnam.org/documentation/
+ns3-ai: https://github.com/hust-diangroup/ns3-ai
+Ollama: https://ollama.com/docs
+Papers Clave para Citar
+1. GenOnet (2025): Multi-agent LLM con NS-3
+2. RouteNet (2019): GNN para redes
+3. ns3-gym (2019): RL con NS-3
+4. LangGraph (2024): Orquestación de agentes
+Comunidades y Foros
+Reddit: r/LocalLLaMA, r/MachineLearning
+Discord: LangChain Community
+NS-3 Users Mailing List
+Stack Overflow: [ns-3], [langgraph]
+
+--- Página 79 ---
+24. CONCLUSIÓN Y PRÓXIMOS PASOS
+¿Qué has logrado con esta guía?
+✅ Sistema completamente funcional de agentes A2A
+✅ Integración NS-3 + IA para experimentos avanzados
+✅ Automatización total del proceso de investigación
+✅ Bitácora automática para reproducibilidad
+✅ Base sólida para tesis doctoral innovadora
+Primeros Pasos Inmediatos
+1. HOY: Instalar Ollama y descargar modelos
+2. MAÑANA: Compilar NS-3 con Python bindings
+3. DÍA 3: Implementar Agente Investigador
+4. DÍA 4: Test completo con experimento simple
+5. SEMANA 2: Primer experimento end-to-end
+Contacto y Soporte
+Si encuentras problemas durante la implementación:
+1. Revisar logs: logs/cron.log , journalctl -u ollama
+2. Validar setup: python debug_tools.py validate
+3. Consultar documentación oficial de cada componente
+4. Buscar en issues de GitHub de LangGraph y ns3-ai
+APÉNDICE A: GLOSARIO TÉCNICO
+A2A: Agent-to-Agent (Agente a Agente)
+AODV: Ad-hoc On-demand Distance Vector
+DQN: Deep Q-Network
+DRL: Deep Reinforcement Learning
+FlowMonitor: Módulo de NS-3 para métricas
+GNN: Graph Neural Network
+LLM: Large Language Model
+MANET: Mobile Ad-hoc Network
+NS-3: Network Simulator 3
+
+--- Página 80 ---
+PDR: Packet Delivery Ratio
+RAG: Retrieval Augmented Generation
+VANET: Vehicular Ad-hoc Network
+APÉNDICE B: TROUBLESHOOTING AVANZADO
+B.1 Error: "ModuleNotFoundError: No module named 'ns'"
+Causa: Python no encuentra los bindings de NS-3
+Solución:
+python
+import sys
+sys.path.insert(0, '/ruta/completa/a/ns-3.43/build/lib/python3')
+B.2 Error: "Ollama connection refused"
+Causa: Servidor Ollama no está corriendo
+Solución:
+bash
+# Verificar estado
+systemctl status ollama
+# Si no está activo
+sudo systemctl start ollama
+# Habilitar en boot
+sudo systemctl enable ollama
+B.3 Simulación NS-3 cuelga indefinidamente
+Causa: Bucle infinito en el código generado
+Solución: Añadir timeout en agents/simulator.py :
+python
+result = subprocess.run(
+cmd,
+timeout=600 # 10 minutos máximo
+)
+
+--- Página 81 ---
+B.4 LLM genera respuestas muy lentas
+Causa: Modelo muy grande para tu hardware
+Solución: Usar modelos cuantizados más pequeños:
+bash
+# En lugar de 32b, usar 7b
+ollama pull qwen2.5-coder:7b
+APÉNDICE C: EJEMPLO COMPLETO DE SESIÓN
+bash
+
+--- Página 82 ---
+# Sesión de ejemplo completa desde cero
+# 1. Activar entorno
+cd ~/tesis-a2a/sistema-a2a
+source venv-a2a/bin/activate
+# 2. Validar sistema
+python debug_tools.py validate
+# ✅ Todos los componentes están correctos
+# 3. Ejecutar experimento
+python main.py --task "Comparar latencia entre AODV y OLSR con 30 nodos"
+# Output esperado:
+# 🚀 INICIANDO EXPERIMENTO A2A
+# ==========================================================================
+# 📋 Tarea: Comparar latencia entre AODV y OLSR con 30 nodos
+# 🆔 Thread ID: abc-123-xyz
+# ==========================================================================
+#
+# 🎓 AGENTE INVESTIGADOR ACTIVADO
+# 🔍 Buscando en Semantic Scholar: routing protocols optimization...
+# 📝 Sintetizando hallazgos de investigación...
+# ✓ Completado: researcher
+#
+# 💻 AGENTE PROGRAMADOR ACTIVADO
+# 🔨 Generando código NS-3...
+# ✅ Código guardado en: simulations/scripts/tesis_sim.py
+# ✓ Completado: coder
+#
+# ⚡ AGENTE SIMULADOR ACTIVADO
+# 🚀 Ejecutando simulación: tesis_sim.py
+# ✅ Simulación exitosa!
+# 📊 Resultados: simulations/results/sim_20251123_143022.xml
+# ✓ Completado: simulator
+#
+# 🔬 AGENTE ANALISTA ACTIVADO
+# 📊 Parseando resultados...
+# 📈 KPIs Calculados:
+# avg_pdr: 87.5
+# avg_throughput: 2.3
+# avg_delay: 45.2
+# ✓ Completado: analyst
+#
+# 📊 AGENTE VISUALIZADOR ACTIVADO
+# ✅ Generados 3 gráficos
+
+--- Página 83 ---
+# ✓ Completado: visualizer
+#
+# 🎉 EXPERIMENTO COMPLETADO
+# ==========================================================================
+# 📊 MÉTRICAS FINALES:
+# avg_pdr: 87.5
+# avg_throughput: 2.3
+# avg_delay: 45.2
+# 📈 Gráficos generados: 3
+# 4. Ver bitácora
+python main.py --export-logbook
+# ✅ Bitácora exportada a: logs/bitacora_completa.md
+# 5. Abrir resultados
+xdg-open simulations/plots/pdr_per_flow.png
+xdg-open logs/bitacora_completa.md
+FIN DE LA GUÍA COMPLETA
+Última actualización: Noviembre 2025
+Versión: 2.0
+Licencia: MIT (Open Source)
+🎯
+¡ACCIÓN INMEDIATA!
+Tu próximo paso es:
+bash
+# Copia y ejecuta estos comandos AHORA:
+cd ~
+mkdir -p tesis-a2a
+cd tesis-a2a
+# Instalar Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+# Descargar primer modelo
+ollama pull qwen2.5-coder:7b
+# ¡Ya tienes el 20% del sistema funcionando!
+
+--- Página 84 ---
+¡Éxito en tu investigación doctoral! 🚀📚

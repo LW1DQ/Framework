@@ -1,0 +1,86 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# NS-3
+ns-3-dev/
+ns-allinone-*/
+*.pcap
+*.xml
+*.tr
+*.dat
+
+# Logs
+logs/
+*.log
+
+# Simulaciones
+simulations/results/*.xml
+simulations/results/*.pcap
+simulations/results/*.txt
+simulations/scripts/sim_*.py
+simulations/visualizations/*.png
+simulations/visualizations/*.html
+simulations/analysis/*.md
+
+# Checkpoints
+*.db
+*.sqlite
+
+# Temporal
+tmp/
+temp/
+*.tmp
+
+# Ollama (no subir modelos)
+.ollama/
+
+# Archivos grandes
+*.zip
+*.tar.gz
+*.rar
+
+# Excepciones (archivos que SÍ queremos subir)
+!sistema-a2a-v1.3-ubuntu.zip
+
+# Documentos temporales de trabajo
+GUIA-INVESTIGADORES-CREADA.md
+GUIA-INVESTIGADORES-COMPLETADA.md
+ESTADO-GUIA-INVESTIGADORES.txt
+RESUMEN-TRABAJO-COMPLETADO.md
+ORGANIZACION-COMPLETADA.md
+EXPORTACION-UBUNTU-COMPLETADA.md
+ESTRUCTURA-PROYECTO.md
