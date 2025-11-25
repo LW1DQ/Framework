@@ -440,9 +440,13 @@ def research_node(state: AgentState) -> Dict:
 No se encontraron papers específicos para la consulta, pero basándose en 
 conocimiento general sobre {task}:
 
-1. **Protocolos Estándar**: AODV, OLSR, DSDV son protocolos comunes en MANETs
+1. **Protocolos Estándar**: 
+   - MANETs: AODV, OLSR, DSDV, DSR son protocolos comunes
+   - Mesh: HWMP (IEEE 802.11s) es el estándar para redes mesh WiFi
 2. **Métricas Clave**: PDR, latencia, throughput, overhead de enrutamiento
-3. **Configuración NS-3**: Usar WiFi 802.11, modelos de movilidad apropiados
+3. **Configuración NS-3**: 
+   - MANETs: Usar WiFi 802.11a/b/g/n con WifiHelper
+   - Mesh: Usar MeshHelper con 802.11s para HWMP
 4. **Recomendación**: Implementar simulación baseline para comparación
 
 Se recomienda ejecutar simulaciones con diferentes configuraciones para 

@@ -412,7 +412,7 @@ If you find this project useful, please consider giving it a star! ⭐
 - **Documentation**: 16,000+ lines
 - **Test Coverage**: 85%+
 - **Agents**: 10
-- **Supported Protocols**: AODV, OLSR, DSDV, DSR, and custom
+- **Supported Protocols**: AODV, OLSR, DSDV, DSR, HWMP (IEEE 802.11s mesh), and custom
 - **Active Development**: Yes ✅
 
 ---

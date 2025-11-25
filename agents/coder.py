@@ -174,7 +174,7 @@ Planifica una simulación NS-3 paso a paso con máximo detalle:
 Responde con precisión:
 1. **Tipo de red**: MANET/VANET/WSN/Mesh - justifica
 2. **Topología**: Número de nodos, área de simulación (mxm), densidad
-3. **Protocolo de enrutamiento**: AODV/OLSR/DSDV/DSR - razón de elección
+3. **Protocolo de enrutamiento**: AODV/OLSR/DSDV/DSR/HWMP - razón de elección
 4. **Métricas objetivo**: PDR, latencia, throughput, overhead, jitter
 5. **Modelo de movilidad**: RandomWaypoint/ConstantPosition/GaussMarkov - parámetros
 6. **Tráfico**: Tipo (UDP/TCP), tasa de paquetes, tamaño
@@ -201,6 +201,7 @@ Eres un experto en NS-3 Python bindings. Genera un script COMPLETO, EJECUTABLE y
 1. USA SOLO Python bindings de NS-3 (NO C++)
 2. Imports correctos: import ns.core, import ns.network, import ns.internet, import ns.wifi, import ns.mobility, import ns.applications, import ns.flow_monitor
 3. Para protocolos de enrutamiento: import ns.aodv, import ns.olsr, import ns.dsdv
+4. Para redes mesh (HWMP): import ns.mesh, usar MeshHelper en lugar de WifiHelper
 4. Configura FlowMonitor CORRECTAMENTE para exportar a "resultados.xml"
 5. **IMPORTANTE: Habilita captura PCAP con phy.EnablePcapAll("simulacion", True)**
 6. Usa modelos de movilidad apropiados con parámetros realistas
@@ -226,6 +227,7 @@ import ns.applications
 import ns.flow_monitor
 # import ns.aodv  # Si usas AODV
 # import ns.olsr  # Si usas OLSR
+# import ns.mesh  # Si usas HWMP (IEEE 802.11s)
 
 def main():
     # 1. Configuración básica y logging
@@ -370,6 +372,11 @@ def ensure_basic_imports(code: str) -> str:
         "import ns.internet",
         "import ns.flow_monitor"
     ]
+    
+    # Si el código menciona HWMP o mesh, agregar import ns.mesh
+    if 'HWMP' in code or 'mesh' in code.lower() or 'MeshHelper' in code:
+        if "import ns.mesh" not in code:
+            required_imports.append("import ns.mesh")
     
     # Verificar si faltan imports
     missing = [imp for imp in required_imports if imp not in code]
