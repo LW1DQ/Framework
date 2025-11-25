@@ -1,3 +1,6 @@
+# NOTA: Estoy trabajando ... 
+
+
 # 🤖 Sistema A2A v1.4 - Framework Multi-Agente para Optimización de Protocolos de Enrutamiento
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
