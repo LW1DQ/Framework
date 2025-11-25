@@ -17,12 +17,10 @@ Sistema Multi-Agente inteligente para investigación en redes de telecomunicacio
 - [Arquitectura](#-arquitectura)
 - [Agentes](#-agentes)
 - [Documentación](#-documentación)
-- [Requisitos](#-requisitos)
 - [Instalación](#-instalación)
 - [Uso](#-uso)
-- [Ejemplos](#-ejemplos)
 - [Para Tesis Doctoral](#-para-tesis-doctoral)
-- [Contribuir](#-contribuir)
+- [Contribuir](CONTRIBUTING.md)
 - [Licencia](#-licencia)
 
 ---
@@ -233,38 +231,14 @@ El sistema automáticamente:
 
 ## 📚 Documentación
 
-### Documentos Esenciales
-
-1. **[QUICK-START-v1.3.txt](QUICK-START-v1.3.txt)** ⭐
-   - Inicio rápido en 5 minutos
-   - Pasos básicos
-
-2. **[LEEME-ACTUALIZACION-v1.3.txt](LEEME-ACTUALIZACION-v1.3.txt)** ⭐
-   - Resumen de novedades
-   - Qué cambió y por qué
-
-3. **[GUIA-USO-NUEVAS-FUNCIONALIDADES.md](GUIA-USO-NUEVAS-FUNCIONALIDADES.md)** ⭐
-   - Guía completa de uso
-   - Ejemplos prácticos
-   - Tips para tesis
-
-4. **[MEJORAS-IMPLEMENTADAS-FINAL.md](MEJORAS-IMPLEMENTADAS-FINAL.md)**
-   - Documentación técnica
-   - Detalles de implementación
-
-5. **[FLUJO-ACTUALIZADO-v1.3.txt](FLUJO-ACTUALIZADO-v1.3.txt)**
-   - Diagrama visual del flujo
-   - Nuevas capacidades
-
-6. **[INDICE-DOCUMENTACION-v1.3.md](INDICE-DOCUMENTACION-v1.3.md)**
-   - Índice completo de documentación
-   - Organización por tema
+- **[Manual de Usuario](MANUAL_USUARIO.md)**: Guía completa para investigadores.
+- **[Guía de Instalación](INSTALL.md)**: Pasos detallados para configurar el entorno.
+- **[Guía de Contribución](CONTRIBUTING.md)**: Estándares para desarrolladores.
+- **[Changelog](CHANGELOG.md)**: Historial de cambios y versiones.
 
 ### Documentación Técnica
-
-- `docs/` - Documentación detallada
-- `examples/` - Ejemplos de uso
-- `tests/` - Tests unitarios
+- `docs/`: Documentación detallada de arquitectura.
+- `tests/`: Suites de pruebas unitarias.
 
 ---
 
@@ -293,34 +267,25 @@ seaborn>=0.12.0
 
 ## 🔧 Instalación
 
-### Instalación Completa
+Para instrucciones detalladas de instalación en **Ubuntu** y **Windows**, consulta la guía oficial:
+
+👉 **[GUÍA DE INSTALACIÓN (INSTALL.md)](INSTALL.md)**
+
+### Resumen Rápido (Ubuntu)
 
 ```bash
-# 1. Clonar repositorio
-git clone <repository-url>
-cd sistema-a2a-export
+# 1. Clonar
+git clone <url-repo>
+cd sistema-a2a
 
-# 2. Crear entorno virtual (recomendado)
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# o
-venv\Scripts\activate  # Windows
-
-# 3. Instalar dependencias
+# 2. Instalar dependencias
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 
-# 4. Verificar instalación
-python test_integration.py
-
-# 5. Configurar NS-3 (si no está instalado)
-# Ver INSTALACION-COMPLETA.md
+# 3. Configurar NS-3
+# Editar config/settings.py con la ruta a tu instalación de NS-3
 ```
-
-### Instalación de NS-3
-
-Ver [INSTALACION-COMPLETA.md](INSTALACION-COMPLETA.md) para instrucciones detalladas.
-
----
 
 ## 📖 Uso
 

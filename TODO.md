@@ -4,20 +4,14 @@
 
 **Fecha de análisis:** 25 de Noviembre de 2025  
 **Versión actual:** 1.4  
-**Estado general:** ✅ Funcional - Mejoras recomendadas
-
----
-
 ## 🔴 PRIORIDAD ALTA (Crítico)
 
-### 1. Conectar Dashboard al Flujo Principal
+### 1. Conectar Dashboard al Flujo Principal (COMPLETADO)
 **Problema:** El dashboard lee archivos estáticos pero no se actualiza durante la ejecución de `main.py`
 
-**Archivos afectados:**
-- `dashboard.py` - Lee JSON/CSV estáticos
-- Todos los agentes en `agents/` - No llaman a `logging_utils`
+**Estado:** ✅ Completado en v1.4
 
-**Solución:**
+**Solución Implementada:**
 ```python
 # En cada agente (researcher.py, coder.py, simulator.py, etc.)
 from utils.logging_utils import update_agent_status, log_message, log_metric
@@ -300,6 +294,33 @@ def call_llm_with_cache(prompt, model):
 
 **Estimación:** 4-5 horas  
 **Impacto:** Medio - Reduce tiempo de ejecución y costos
+
+---
+
+---
+
+## 🟣 MEJORAS EXPERTAS (Basadas en 'AI Agents in Action')
+
+### 13. Memoria Episódica (Episodic Memory)
+**Concepto:** Permitir que el sistema "recuerde" experimentos pasados para no repetir errores.
+**Implementación:**
+- Almacenar tuplas `(tarea, código, error, solución)` en ChromaDB.
+- Antes de generar código, el `Coder` consulta: "¿He resuelto un error similar antes?"
+**Impacto:** Reduce costos de LLM y tiempo de depuración drásticamente.
+
+### 14. Agente Crítico (Reflection Pattern)
+**Concepto:** Un agente dedicado a "criticar" el plan antes de ejecutarlo.
+**Implementación:**
+- Añadir nodo `Critic` entre `Coder` y `Simulator`.
+- Verifica lógica de negocio (no solo sintaxis): "¿Este código realmente testea la hipótesis?"
+**Impacto:** Aumenta la calidad científica de los experimentos.
+
+### 15. Herramientas Dinámicas (Dynamic Tools)
+**Concepto:** Agentes que crean sus propias herramientas.
+**Implementación:**
+- Permitir al `Coder` definir funciones Python que se registran como herramientas para el `Researcher`.
+- Ejemplo: Crear un parser específico para un log extraño y usarlo inmediatamente.
+**Impacto:** Flexibilidad total para escenarios no previstos.
 
 ---
 

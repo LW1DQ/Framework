@@ -81,6 +81,7 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
+misc/
 
 # Ollama (no subir modelos)
 .ollama/
@@ -95,7 +96,7 @@ temp/
 !simulations/scripts/.gitkeep
 !sistema-a2a-v1.3-ubuntu.zip
 
-# Documentos temporales de trabajo
+# Documentos temporales de trabajo e instrucciones internas
 GUIA-INVESTIGADORES-CREADA.md
 GUIA-INVESTIGADORES-COMPLETADA.md
 ESTADO-GUIA-INVESTIGADORES.txt
@@ -103,3 +104,12 @@ RESUMEN-TRABAJO-COMPLETADO.md
 ORGANIZACION-COMPLETADA.md
 EXPORTACION-UBUNTU-COMPLETADA.md
 ESTRUCTURA-PROYECTO.md
+EMPIEZA-AQUI.txt
+QUICK-START-v1.3.txt
+LEEME-ACTUALIZACION-v1.3.txt
+FLUJO-ACTUALIZADO-v1.3.txt
+INDICE-DOCUMENTACION.md
+TODO.md
+LEEME-IMPORTANTE.txt
+*.bak
+*.backup

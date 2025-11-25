@@ -14,6 +14,7 @@ from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 from utils.state import AgentState
+from utils.logging_utils import update_agent_status, log_message
 from agents import (
     research_node,
     coder_node,
@@ -22,8 +23,10 @@ from agents import (
     analyst_node,
     visualizer_node,
     github_manager_node,
+    github_manager_node,
     optimizer_node
 )
+from agents.critic import critic_node
 from config.settings import LOGS_DIR
 
 
@@ -42,11 +45,12 @@ class SupervisorOrchestrator:
         self.workflow.add_node("coder", coder_node)
         self.workflow.add_node("simulator", simulator_node)
         self.workflow.add_node("trace_analyzer", trace_analyzer_node)
-        self.workflow.add_node("trace_analyzer", trace_analyzer_node)
         self.workflow.add_node("analyst", analyst_node)
         self.workflow.add_node("visualizer", visualizer_node)
         self.workflow.add_node("optimizer", optimizer_node)
+        self.workflow.add_node("optimizer", optimizer_node)
         self.workflow.add_node("github_manager", github_manager_node)
+        self.workflow.add_node("critic", critic_node)
         
         # Definir flujo de trabajo
         self._define_workflow()
@@ -71,14 +75,25 @@ class SupervisorOrchestrator:
         # Flujo: Investigador → Programador
         self.workflow.add_edge("researcher", "coder")
         
-        # Lógica condicional: ¿El código es válido?
+        # Lógica condicional: ¿El código es válido (sintaxis)?
+        # Si es válido, pasa al Crítico (lógica). Si no, reintenta o termina.
         self.workflow.add_conditional_edges(
             "coder",
             self._should_retry_code,
             {
-                "simulator": "simulator",
+                "critic": "critic",
                 "retry": "coder",
                 "end": END
+            }
+        )
+        
+        # Lógica condicional: ¿El Crítico aprueba la lógica?
+        self.workflow.add_conditional_edges(
+            "critic",
+            self._should_approve_logic,
+            {
+                "simulator": "simulator",
+                "retry_logic": "coder"
             }
         )
         
@@ -115,9 +130,9 @@ class SupervisorOrchestrator:
         # GitHub Manager → Fin
         self.workflow.add_edge("github_manager", END)
     
-    def _should_retry_code(self, state: AgentState) -> Literal["simulator", "retry", "end"]:
+    def _should_retry_code(self, state: AgentState) -> Literal["critic", "retry", "end"]:
         """
-        Decide si reintentar generación de código
+        Decide si reintentar generación de código (validación sintáctica)
         
         Args:
             state: Estado actual
@@ -128,15 +143,27 @@ class SupervisorOrchestrator:
         # Si hay errores y no se excedió límite de iteraciones
         if state.get('errors') and state['iteration_count'] < state['max_iterations']:
             print(f"\n🔄 Reintentando código (iteración {state['iteration_count']}/{state['max_iterations']})")
+            log_message("Supervisor", f"Reintentando código (iteración {state['iteration_count']})")
             return "retry"
         
-        # Si código validado
+        # Si código validado (sintácticamente)
         if state.get('code_validated', False):
-            return "simulator"
+            return "critic"
         
         # Si se excedió límite
         print(f"\n⚠️  Límite de iteraciones alcanzado ({state['max_iterations']})")
+        log_message("Supervisor", "Límite de iteraciones alcanzado en generación de código", level="WARNING")
         return "end"
+
+    def _should_approve_logic(self, state: AgentState) -> Literal["simulator", "retry_logic"]:
+        """
+        Decide si el código pasa la revisión lógica del Crítico
+        """
+        if state.get('critic_approved', False):
+            return "simulator"
+        else:
+            print(f"\n🔄 Crítico rechazó código. Reintentando...")
+            return "retry_logic"
     
     def _should_retry_simulation(self, state: AgentState) -> Literal["trace_analyzer", "retry_code", "end"]:
         """
@@ -157,10 +184,12 @@ class SupervisorOrchestrator:
         # Si falló y no se excedió límite
         if sim_status == 'failed' and state['iteration_count'] < state['max_iterations']:
             print(f"\n🔄 Reintentando desde código (iteración {state['iteration_count']}/{state['max_iterations']})")
+            log_message("Supervisor", f"Simulación fallida. Reintentando desde código (iteración {state['iteration_count']})")
             return "retry_code"
         
         # Si se excedió límite
         print(f"\n⚠️  Límite de iteraciones alcanzado ({state['max_iterations']})")
+        log_message("Supervisor", "Límite de iteraciones alcanzado en simulación", level="WARNING")
         return "end"
     
     def _should_optimize(self, state: AgentState) -> Literal["visualizer", "optimizer"]:
@@ -201,9 +230,11 @@ class SupervisorOrchestrator:
         
         if needs_optimization and optimization_count < 2:
             print(f"\n🚀 Iniciando ciclo de optimización (intento {optimization_count + 1}/2)")
+            log_message("Supervisor", f"Iniciando ciclo de optimización {optimization_count + 1}")
             return "optimizer"
         else:
             print(f"\n✓ Rendimiento aceptable o límite alcanzado - Continuando a visualización")
+            log_message("Supervisor", "Rendimiento aceptable o límite alcanzado. Pasando a visualización.")
             return "visualizer"
     
     def run_experiment(self, task: str, thread_id: str = None, max_iterations: int = 5):
@@ -241,15 +272,20 @@ class SupervisorOrchestrator:
         print(f"🔄 Max iteraciones: {max_iterations}")
         print("="*80)
         
+        update_agent_status("Supervisor", "running", f"Iniciando experimento: {task}")
+        log_message("Supervisor", f"Iniciando experimento. Thread ID: {thread_id}")
+        
         # Ejecutar workflow
         try:
             for event in self.app.stream(initial_state, config=config):
                 for node_name, node_output in event.items():
                     print(f"\n✓ Nodo completado: {node_name}")
+                    log_message("Supervisor", f"Nodo completado: {node_name}")
                     
                     # Mostrar errores si existen
                     if 'errors' in node_output and node_output['errors']:
                         print(f"  ⚠️  Errores: {node_output['errors'][-1][:100]}...")
+                        log_message("Supervisor", f"Errores en {node_name}: {node_output['errors'][-1][:100]}...", level="WARNING")
             
             # Obtener estado final
             final_state = self.app.get_state(config)
@@ -257,6 +293,9 @@ class SupervisorOrchestrator:
             print("\n" + "="*80)
             print("🎉 EXPERIMENTO COMPLETADO")
             print("="*80)
+            
+            log_message("Supervisor", "Experimento completado exitosamente")
+            update_agent_status("Supervisor", "completed", "Experimento finalizado")
             
             # Resumen de resultados
             if final_state.values.get('metrics'):
@@ -280,6 +319,8 @@ class SupervisorOrchestrator:
             print(f"\n❌ ERROR EN EXPERIMENTO: {str(e)}")
             import traceback
             traceback.print_exc()
+            log_message("Supervisor", f"Error crítico en experimento: {e}", level="ERROR")
+            update_agent_status("Supervisor", "failed", f"Error: {str(e)[:50]}")
             return None
 
 

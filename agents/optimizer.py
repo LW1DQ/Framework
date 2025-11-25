@@ -14,6 +14,7 @@ from langchain_ollama import ChatOllama
 
 from config.settings import OLLAMA_BASE_URL, MODEL_REASONING, MODEL_CODING
 from utils.state import AgentState, add_audit_entry
+from utils.logging_utils import update_agent_status, log_message
 from agents.ns3_ai_integration import (
     generate_ns3_ai_code,
     generate_drl_training_code,
@@ -322,6 +323,7 @@ Genera un script NS-3 MEJORADO que implemente optimizaciones basadas en la propu
    - Ajustar intervalos de HELLO/TC
    - Optimizar tamaños de buffer
    - Ajustar potencia de transmisión
+   - Ajustar parámetros WiFi
 
 2. **Mejoras en Configuración**:
    - Usar protocolo más adecuado si es necesario
@@ -433,11 +435,16 @@ def optimizer_node(state: AgentState) -> Dict:
     print("🚀 AGENTE OPTIMIZADOR ACTIVADO")
     print("="*80)
     
+    # Actualizar estado en dashboard
+    update_agent_status("Optimizer", "running", "Analizando resultados y optimizando")
+    log_message("Optimizer", "Iniciando análisis de optimización...")
+    
     # Verificar que haya métricas para analizar
     kpis = state.get('metrics', {})
     
     if not kpis:
         print("⚠️  No hay métricas para optimizar")
+        log_message("Optimizer", "No hay métricas disponibles para optimización", level="WARNING")
         return {
             'messages': ['No hay métricas disponibles para optimización'],
             **add_audit_entry(state, "optimizer", "no_metrics", {})
@@ -477,6 +484,8 @@ def optimizer_node(state: AgentState) -> Dict:
     # Si no hay problemas significativos, no optimizar
     if critical_count == 0 and moderate_count == 0:
         print("\n✅ Rendimiento óptimo. No se requieren optimizaciones.")
+        log_message("Optimizer", "Rendimiento óptimo. No se requieren cambios.")
+        update_agent_status("Optimizer", "completed", "Optimización no requerida")
         return {
             'optimization_proposal': 'Rendimiento óptimo - no se requieren cambios',
             'optimized_code': baseline_code,
@@ -488,6 +497,7 @@ def optimizer_node(state: AgentState) -> Dict:
     
     # Paso 2: Proponer arquitectura DL
     print(f"\n🧠 Diseñando arquitectura de Deep Learning...")
+    log_message("Optimizer", "Diseñando arquitectura de Deep Learning...")
     architecture_proposal = propose_dl_architecture(bottlenecks, task)
     print(f"   ✓ Propuesta generada ({len(architecture_proposal)} caracteres)")
     
@@ -498,6 +508,7 @@ def optimizer_node(state: AgentState) -> Dict:
     if use_drl:
         print(f"   ✅ DRL recomendado para estos problemas")
         print(f"   📚 Generando código con integración ns3-ai...")
+        log_message("Optimizer", "Generando código DRL con integración ns3-ai...")
         
         # Extraer parámetros de la propuesta
         drl_params = extract_drl_parameters(architecture_proposal)
@@ -533,6 +544,7 @@ def optimizer_node(state: AgentState) -> Dict:
     else:
         print(f"   ℹ️  DRL no necesario - optimización paramétrica suficiente")
         print(f"\n💻 Generando código optimizado...")
+        log_message("Optimizer", "Generando código optimizado (paramétrico)...")
         optimized_code = generate_optimization_code(
             architecture_proposal,
             baseline_code,
@@ -595,6 +607,9 @@ def optimizer_node(state: AgentState) -> Dict:
     print(f"Código optimizado: {code_file.name}")
     print(f"🔄 El código optimizado será regenerado por el Agente Programador")
     print(f"{'='*80}")
+    
+    log_message("Optimizer", "Optimización completada exitosamente")
+    update_agent_status("Optimizer", "completed", "Optimización finalizada")
     
     # Importar función para incrementar contador
     from utils.state import increment_optimization_count

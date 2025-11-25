@@ -20,6 +20,7 @@ from config.settings import (
     SIMULATIONS_DIR
 )
 from utils.state import AgentState, add_audit_entry, increment_iteration
+from utils.logging_utils import update_agent_status, log_message
 
 
 # Template base para scripts NS-3
@@ -122,14 +123,17 @@ def validate_code(code: str) -> tuple[bool, str]:
     return True, "Código válido"
 
 
-def generate_code(task: str, research_notes: str, previous_error: str = None, iteration: int = 0) -> str:
+from utils.memory import memory
+
+def generate_code(task: str, research_notes: str, previous_error: str = None, error_type: str = None, iteration: int = 0) -> str:
     """
-    Genera código NS-3 usando Chain-of-Thought mejorado con auto-corrección
+    Genera código NS-3 usando Chain-of-Thought mejorado con auto-corrección y memoria episódica
     
     Args:
         task: Tarea de simulación
         research_notes: Notas de investigación
         previous_error: Error previo a corregir (si existe)
+        error_type: Tipo de error (CompilationError, SimulationError, etc.)
         iteration: Número de iteración (para ajustar estrategia)
         
     Returns:
@@ -142,6 +146,21 @@ def generate_code(task: str, research_notes: str, previous_error: str = None, it
             base_url=OLLAMA_BASE_URL
         )
         
+        # Recuperar experiencia de memoria si hay error previo
+        memory_context = ""
+        if previous_error:
+            experiences = memory.retrieve_experience(task, previous_error)
+            if experiences:
+                exp = experiences[0]
+                print(f"🧠 Memoria activada: Solución similar encontrada ({exp['relevance']:.2f})")
+                log_message("Coder", f"Memoria activada: Solución similar encontrada ({exp['relevance']:.2f})")
+                memory_context = f"""
+**💡 SOLUCIÓN PASADA RECUPERADA:**
+En una tarea similar ("{exp['task']}") con un error similar ("{exp['error']}"), 
+esta solución funcionó:
+{exp['solution']}
+"""
+
         # Paso 1: Chain of Thought - Planificación detallada
         cot_prompt = f"""
 Planifica una simulación NS-3 paso a paso con máximo detalle:
@@ -150,6 +169,7 @@ Planifica una simulación NS-3 paso a paso con máximo detalle:
 
 **CONTEXTO DE INVESTIGACIÓN:**
 {research_notes[:800] if research_notes else "Sin contexto específico"}
+{memory_context}
 
 Responde con precisión:
 1. **Tipo de red**: MANET/VANET/WSN/Mesh - justifica
@@ -163,6 +183,7 @@ Responde con precisión:
 """
         
         print("  📋 Planificando simulación (análisis profundo)...")
+        log_message("Coder", "Planificando simulación con Chain-of-Thought...")
         reasoning = llm.invoke(cot_prompt)
         print(f"  ✓ Planificación completada")
         
@@ -273,22 +294,49 @@ Devuelve SOLO el código Python completo entre ```python y ```, sin explicacione
         
         # Si hay error previo, agregar contexto de corrección
         if previous_error:
+            error_strategy = ""
+            if error_type == "CompilationError":
+                error_strategy = """
+**ESTRATEGIA PARA ERROR DE COMPILACIÓN/SINTAXIS:**
+1. Verifica minuciosamente la sintaxis de Python.
+2. Revisa que todos los módulos de NS-3 estén importados (ns.core, ns.network, etc.).
+3. Asegúrate de que los nombres de clases y métodos de NS-3 sean correctos (case-sensitive).
+"""
+            elif error_type == "SimulationError":
+                error_strategy = """
+**ESTRATEGIA PARA ERROR DE SIMULACIÓN (RUNTIME):**
+1. Verifica que los objetos (nodos, aplicaciones) se hayan creado correctamente antes de usarlos.
+2. Asegura que las interfaces IP estén asignadas.
+3. Revisa conflictos de direcciones o puertos.
+4. Verifica que FlowMonitor se instale al final.
+"""
+            elif error_type == "TimeoutError":
+                error_strategy = """
+**ESTRATEGIA PARA TIMEOUT:**
+1. Reduce el tiempo de simulación (ej. a 50s).
+2. Reduce el número de nodos.
+3. Simplifica el modelo de tráfico.
+"""
+            else:
+                error_strategy = """
+**ESTRATEGIA GENERAL:**
+1. Identifica la causa raíz del error.
+2. Simplifica el código si es necesario.
+"""
+
             code_prompt += f"""
 
 **⚠️ ERROR ANTERIOR (Iteración {iteration}):**
-{previous_error[:500]}
+Tipo: {error_type or 'Desconocido'}
+Detalle: {previous_error[:500]}
 
-**ESTRATEGIA DE CORRECCIÓN:**
-1. Identifica la causa raíz del error
-2. Verifica imports faltantes
-3. Corrige sintaxis de NS-3 Python bindings
-4. Asegura que todos los objetos se inicialicen correctamente
-5. Valida que FlowMonitor esté bien configurado
+{error_strategy}
 
-IMPORTANTE: Este es el intento #{iteration+1}. Sé más cuidadoso con la sintaxis.
+IMPORTANTE: Este es el intento #{iteration+1}. Sé más cuidadoso.
 """
         
         print(f"  💻 Generando código (intento #{iteration+1})...")
+        log_message("Coder", f"Generando código (Iteración {iteration+1})...")
         response = llm.invoke(code_prompt)
         code = extract_code_from_response(response.content)
         
@@ -296,11 +344,13 @@ IMPORTANTE: Este es el intento #{iteration+1}. Sé más cuidadoso con la sintaxi
         code = ensure_basic_imports(code)
         
         print(f"  ✓ Código generado ({len(code)} caracteres)")
+        log_message("Coder", f"Código generado ({len(code)} bytes)")
         
         return code
         
     except Exception as e:
         print(f"  ❌ Error generando código: {e}")
+        log_message("Coder", f"Error generando código: {e}", level="ERROR")
         return generate_fallback_code(task)
 
 
@@ -477,33 +527,43 @@ def coder_node(state: AgentState) -> Dict:
     task = state['task']
     research_notes = "\n".join(state.get('research_notes', []))
     previous_error = state['errors'][-1] if state.get('errors') else None
+    error_type = state.get('error_type')
     iteration = state.get('iteration', 0)
+    
+    # Actualizar estado en Dashboard
+    update_agent_status("Coder", "running", f"Generando código (Iteración {iteration+1})")
+    log_message("Coder", f"Iniciando generación de código para: {task}")
     
     print(f"📋 Tarea: {task}")
     print(f"🔄 Iteración: {iteration + 1}")
     if previous_error:
-        print(f"⚠️  Corrigiendo error previo: {previous_error[:150]}...")
+        print(f"⚠️  Corrigiendo error previo ({error_type}): {previous_error[:150]}...")
+        log_message("Coder", f"Corrigiendo error previo ({error_type}): {previous_error[:100]}...", level="WARNING")
     print()
     
     # Generar código con contexto de iteración
-    code = generate_code(task, research_notes, previous_error, iteration)
+    code = generate_code(task, research_notes, previous_error, error_type, iteration)
     
     # Validar código
     is_valid, validation_msg = validate_code(code)
     
     if not is_valid:
         print(f"❌ Validación falló: {validation_msg}")
+        log_message("Coder", f"Validación falló: {validation_msg}", level="ERROR")
         
         # Si es la primera iteración, intentar auto-corrección inmediata
         if iteration == 0:
             print("🔧 Intentando auto-corrección...")
-            code = generate_code(task, research_notes, validation_msg, 1)
+            log_message("Coder", "Intentando auto-corrección inmediata...")
+            code = generate_code(task, research_notes, validation_msg, "CompilationError", 1)
             is_valid, validation_msg = validate_code(code)
             
             if is_valid:
                 print("✅ Auto-corrección exitosa")
+                log_message("Coder", "Auto-corrección exitosa")
             else:
                 print(f"❌ Auto-corrección falló: {validation_msg}")
+                log_message("Coder", f"Auto-corrección falló: {validation_msg}", level="ERROR")
                 return {
                     'code_snippet': code,
                     'code_validated': False,
@@ -535,6 +595,24 @@ def coder_node(state: AgentState) -> Dict:
     print(f"✅ Código guardado en: {filepath}")
     print(f"✅ Validación exitosa")
     print(f"📊 Estadísticas: {len(code)} caracteres, {code.count('def ')} funciones")
+    
+    # MEMORIA EPISÓDICA: Si hubo error previo y ahora es exitoso, guardar experiencia
+    if previous_error:
+        try:
+            print("🧠 Guardando experiencia en memoria episódica...")
+            memory.add_experience(
+                task=task,
+                code=code, # El código exitoso es la solución
+                error=previous_error,
+                solution=code
+            )
+            log_message("Coder", "Experiencia guardada en memoria episódica")
+        except Exception as e:
+            print(f"⚠️ Error guardando memoria: {e}")
+            log_message("Coder", f"Error guardando memoria: {e}", level="WARNING")
+    
+    log_message("Coder", f"Código guardado en: {filename}")
+    update_agent_status("Coder", "completed", "Código generado y validado")
     
     return {
         'code_snippet': code,

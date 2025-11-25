@@ -28,6 +28,18 @@ Para facilitar la supervisión de los experimentos, hemos creado un panel de con
     *   **Gráficos en Vivo**: Visualiza la evolución del **PDR (Packet Delivery Ratio)**, **Delay** y **Throughput** en tiempo real.
     *   **Transparencia**: Permite leer los "pensamientos" y logs de los agentes mientras trabajan.
 
+### 1.3. Integración Nativa NS-3 AI
+Para escenarios de alto rendimiento, el sistema ahora soporta **ns3-ai**, una interfaz de memoria compartida entre Python y C++.
+*   **Velocidad**: Elimina la latencia de comunicación entre el agente y el simulador.
+*   **Arquitectura**: Usa `RingBuffer` para transferir tensores de estado y acción en microsegundos.
+*   **Compatibilidad**: Detecta automáticamente si `ns3-ai` está instalado y lo utiliza; si no, usa el modo estándar.
+
+### 1.4. Sistema de Auto-Corrección Robusta
+El sistema ahora cuenta con un manejo de errores estructurado que permite a los agentes recuperarse de fallos comunes sin intervención humana.
+*   **Errores de Compilación**: El agente Programador identifica imports faltantes o errores de sintaxis y los corrige automáticamente.
+*   **Errores de Simulación**: Si NS-3 falla (ej. configuración inválida), el Simulador captura el error y el Programador ajusta el script.
+*   **Timeouts**: Si una simulación tarda demasiado, el sistema la aborta y sugiere simplificar el escenario.
+
 ---
 
 ## Parte 2: Guía de Instalación Detallada
@@ -38,6 +50,7 @@ Siga estos pasos para preparar el entorno en una máquina nueva.
 *   **Sistema Operativo**: Windows (con WSL2 recomendado) o Linux (Ubuntu 20.04/22.04).
 *   **Python**: Versión 3.8 o superior.
 *   **NS-3**: Debe tener instalado el simulador NS-3 (versión 3.30+ recomendada).
+    *   *Opcional*: Para usar la integración de alta velocidad, compile NS-3 con el módulo `ns3-ai`.
 *   **Ollama**: Debe tener instalado y ejecutándose Ollama para los modelos de lenguaje.
 
 ### Paso 1: Instalar Dependencias de Python

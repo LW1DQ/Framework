@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "Si utilizas este software en tu investigación, por favor cítalo como sigue."
+authors:
+- family-names: "Sistema A2A"
+  given-names: "Equipo de Desarrollo"
+title: "Sistema A2A: Framework Multi-Agente para Optimización de Protocolos de Enrutamiento"
+version: 1.4.0
+date-released: 2025-11-25
+url: "https://github.com/tu-usuario/sistema-a2a"
+keywords:
+  - ns-3
+  - multi-agent systems
+  - deep reinforcement learning
+  - manet
+  - vanet
+  - optimization
+license: MIT

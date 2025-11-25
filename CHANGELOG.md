@@ -8,20 +8,16 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ## [v1.4.0] - 2025-11-25
 
 ### 🚀 Nuevo
-- **Agente de IA (PPO)**: Implementación real de Deep Reinforcement Learning usando PyTorch. Reemplaza los placeholders anteriores.
+- **Agente de IA (PPO)**: Implementación real de Deep Reinforcement Learning usando PyTorch.
   - Red Neuronal Actor-Critic.
   - Entrenamiento episódico automático.
   - Persistencia de modelos (`.pth`).
-- **Dashboard en Tiempo Real**: Interfaz gráfica basada en Streamlit.
-  - Monitoreo de estado de agentes.
-  - Gráficos en vivo de PDR, Delay y Throughput.
-  - Visualización de logs del sistema.
-- **Sistema de Logging**: Nuevo módulo `utils/logging_utils.py` para centralizar la telemetría.
-
-### ⚡ Mejorado
-- **Integración NS-3**: El `Simulator` ahora reporta métricas en tiempo real al dashboard.
-- **Documentación**: Manual de usuario completamente reescrito y detallado para investigadores.
-- **Estructura**: Limpieza de archivos y mejor organización del proyecto.
+- **Integración NS-3 AI**: Soporte nativo para `ns3-ai` usando memoria compartida (RingBuffer) para alta velocidad.
+- **Manejo de Errores Estructurado**: Sistema robusto de auto-corrección.
+  - Nuevas excepciones: `CompilationError`, `SimulationError`, `TimeoutError`.
+  - Estrategias de recuperación inteligentes en Agente Programador.
+- **Dashboard en Tiempo Real**: Panel de control interactivo con Streamlit.
+- **Logging Centralizado**: Sistema de telemetría y auditoría.
 
 ### 🐛 Corregido
 - Validación de imports en `optimizer.py`.

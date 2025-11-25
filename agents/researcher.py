@@ -22,6 +22,7 @@ from config.settings import (
     SEMANTIC_SCHOLAR_MAX_RESULTS
 )
 from utils.state import AgentState, add_audit_entry
+from utils.logging_utils import update_agent_status, log_message
 
 
 def search_semantic_scholar(query: str, max_results: int = 10) -> list:
@@ -321,24 +322,32 @@ def research_node(state: AgentState) -> Dict:
     task = state['task']
     print(f"📋 Tarea: {task}\n")
     
+    # Actualizar estado en Dashboard
+    update_agent_status("Researcher", "running", f"Investigando: {task}")
+    log_message("Researcher", f"Iniciando investigación para: {task}")
+    
     all_papers = []
     
     # 1. Buscar en Semantic Scholar
     print("🔎 Buscando en Semantic Scholar...")
+    log_message("Researcher", "Consultando Semantic Scholar...")
     query_ss = f"routing protocols optimization {task} ns-3 smart cities"
     papers_ss = search_semantic_scholar(query_ss, SEMANTIC_SCHOLAR_MAX_RESULTS)
     
     if papers_ss:
         print(f"✅ Semantic Scholar: {len(papers_ss)} papers")
+        log_message("Researcher", f"Encontrados {len(papers_ss)} papers en Semantic Scholar")
         all_papers.extend(papers_ss)
     
     # 2. Buscar en arXiv
     print("🔎 Buscando en arXiv...")
+    log_message("Researcher", "Consultando arXiv...")
     query_arxiv = f"routing protocols {task} machine learning"
     papers_arxiv = search_arxiv(query_arxiv, max_results=5)
     
     if papers_arxiv:
         print(f"✅ arXiv: {len(papers_arxiv)} papers")
+        log_message("Researcher", f"Encontrados {len(papers_arxiv)} papers en arXiv")
         all_papers.extend(papers_arxiv)
     
     # 3. Consultar base de datos local (RAG)
@@ -347,6 +356,7 @@ def research_node(state: AgentState) -> Dict:
     
     if local_docs:
         print(f"✅ Base local: {len(local_docs)} documentos relevantes")
+        log_message("Researcher", f"Recuperados {len(local_docs)} documentos de base local")
     
     if all_papers:
         print(f"\n📚 Total: {len(all_papers)} papers encontrados")
@@ -357,6 +367,7 @@ def research_node(state: AgentState) -> Dict:
         
         # Sintetizar hallazgos
         print("📝 Sintetizando hallazgos...")
+        log_message("Researcher", "Sintetizando hallazgos con LLM...")
         synthesis = synthesize_research(task, all_papers)
         
         # Añadir contexto de documentos locales si existen
@@ -367,6 +378,9 @@ def research_node(state: AgentState) -> Dict:
         print("\n📚 Síntesis completada")
         print(f"   Longitud: {len(synthesis)} caracteres")
         print(f"   Papers: {len(all_papers)}")
+        
+        log_message("Researcher", "Investigación completada exitosamente")
+        update_agent_status("Researcher", "completed", "Investigación finalizada")
         
         # Actualizar estado
         return {
@@ -380,6 +394,7 @@ def research_node(state: AgentState) -> Dict:
         }
     else:
         print("⚠️  No se encontraron papers. Continuando con conocimiento base...")
+        log_message("Researcher", "No se encontraron papers. Usando conocimiento base.", level="WARNING")
         
         # Síntesis básica sin papers
         synthesis = f"""
@@ -399,6 +414,8 @@ obtener resultados empíricos.
         if local_docs:
             synthesis += "\n\n**Contexto de investigaciones previas:**\n"
             synthesis += "\n".join([f"- {doc[:200]}..." for doc in local_docs[:2]])
+        
+        update_agent_status("Researcher", "completed", "Investigación finalizada (sin papers)")
         
         return {
             "research_notes": [synthesis],
