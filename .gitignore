@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+.venv
+.conda/
+conda/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# NS-3
+ns-3.*/
+ns-3-dev/
+build/
+.lock-waf*
+.waf*
+
+# Logs and Results
+logs/
+simulations/results/*.pcap
+simulations/results/*.xml
+simulations/results/*.txt
+simulations/scripts/backups/
+system_state.json
+simulation_metrics.csv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Exceptions (Keep these)
+!simulations/results/.gitkeep
+!simulations/scripts/.gitkeep
