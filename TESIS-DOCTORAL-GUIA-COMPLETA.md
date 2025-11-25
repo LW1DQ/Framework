@@ -558,7 +558,7 @@ python experiments/experiment_runner.py --config experiments/configs/mobility.ya
 ### Implementación ✅
 
 - [x] Sistema multi-agente funcional
-- [x] 9 agentes especializados implementados
+- [x] 11 agentes especializados implementados
 - [x] Memoria episódica funcional
 - [x] Integración NS-3 (módulo C++)
 - [x] Dashboard en tiempo real
@@ -568,6 +568,7 @@ python experiments/experiment_runner.py --config experiments/configs/mobility.ya
 - [x] Generador de tablas LaTeX
 - [x] 11 tests unitarios
 - [x] Documentación completa (10,000+ líneas)
+- [x] API Reference completa (todos los agentes y utilidades)
 
 ### Validación Experimental ⏳
 
