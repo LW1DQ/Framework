@@ -1,0 +1,528 @@
+--- Página 1 ---
+Arquitectura Integral de Sistemas
+Multi-Agente Autónomos para la
+Optimización de Protocolos de
+Enrutamiento en Ciudades Inteligentes
+1. Introducción y Justificación Metodológica
+La evolución de las redes de telecomunicaciones hacia la sexta generación (6G) y la
+implementación masiva de infraestructuras para Ciudades Inteligentes (Smart Cities) plantean
+desafíos sin precedentes en la gestión del tráfico de datos. Los entornos urbanos modernos
+se caracterizan por una densidad de dispositivos extremadamente alta y una movilidad
+dinámica, representada por las redes ad-hoc vehiculares (VANETs) y las redes ad-hoc móviles
+(MANETs). En este contexto, los protocolos de enrutamiento tradicionales, diseñados bajo
+premisas estáticas o heurísticas simples, resultan insuficientes para satisfacer las demandas
+de latencia ultrabaja y eficiencia energética crítica.1
+Para abordar esta complejidad en el marco de una tesis doctoral, la metodología de
+investigación no puede limitarse a la simulación manual iterativa. Se requiere un cambio de
+paradigma hacia la automatización cognitiva. Este informe propone el diseño, implementación
+y despliegue de un sistema de Agentes de Inteligencia Artificial (A2A) orquestados para
+actuar como un equipo de investigación autónomo. Este sistema no es simplemente una
+herramienta de automatización de scripts, sino una arquitectura cognitiva capaz de razonar
+sobre el estado de la red, proponer arquitecturas de redes neuronales novedosas (como
+Graph Neural Networks o GNNs), ejecutar simulaciones rigurosas en el simulador de eventos
+discretos NS-3, y documentar meticulosamente el proceso científico.
+La propuesta técnica detallada a continuación se adhiere estrictamente a principios de
+código abierto y coste cero, eliminando la dependencia de suscripciones a APIs propietarias
+(como GPT-4 o Claude Opus) mediante el uso de inferencia local con modelos cuantizados a
+través de Ollama y marcos de orquestación avanzados como LangGraph. Esta elección no
+es meramente económica, sino estratégica: garantiza la soberanía de los datos, la
+reproducibilidad total de los experimentos y la posibilidad de modificar el código base de los
+
+--- Página 2 ---
+agentes para adaptarlos a las necesidades específicas de la investigación doctoral.
+El sistema se estructura en torno a una topología de "Supervisor-Trabajador", donde un
+orquestador central gestiona el estado global de la investigación y delega tareas a agentes
+especializados: desde la revisión bibliográfica automatizada mediante APIs académicas
+abiertas, hasta la inyección de modelos de Aprendizaje por Refuerzo Profundo (DRL) en el
+núcleo de simulación de NS-3 mediante módulos de memoria compartida.
+2. Marco de Orquestación: Selección y Arquitectura
+del Sistema
+La decisión arquitectónica más crítica en el diseño de un sistema multi-agente para fines
+académicos es la selección del marco de orquestación (framework). A diferencia de las
+aplicaciones comerciales de chat, una tesis doctoral requiere persistencia del estado,
+manejo robusto de errores y control de flujo cíclico. La investigación científica es iterativa:
+se formula una hipótesis, se simula, se analiza, y si el resultado es erróneo, se ajusta y se
+repite. Un flujo lineal simple es insuficiente.
+2.1 Análisis Comparativo de Frameworks de Código Abierto
+Tras una evaluación exhaustiva de las opciones disponibles en el ecosistema actual
+—principalmente LangGraph, CrewAI y AutoGen— se ha determinado que LangGraph es la
+única solución que satisface plenamente los requisitos de robustez y control de estado
+necesarios para una "bitácora" científica fiable.4
+Característic LangGraph CrewAI AutoGen Justificación
+a Crítica para la Tesis
+Filosofía de Basado en Basado en Conversaciona LangGraph:
+Control Grafos Roles y l (Diálogo Permite definir
+(Nodos/Aristas Procesos entre agentes). bucles de
+) y Máquinas Secuenciales/J corrección (ej.
+de Estado erárquicos. si el código de
+Finito. NS-3 no
+compila, volver
+
+--- Página 3 ---
+al nodo de
+programación)
+.
+Gestión de Estado Memoria Historial de LangGraph:
+Memoria explícito y basada en conversación Esencial para
+persistente roles, menos (contexto el Agente de
+(Checkpoints). granularidad compartido). Bitácora,
+en el estado permitiendo
+global. "viajar en el
+tiempo" y
+auditar cada
+paso.
+Recuperación Aristas Limitada; Flexible pero LangGraph:
+de Errores condicionales tiende a impredecible Las
+deterministas. alucinar o (puede quedar simulaciones
+detenerse ante en bucles de científicas
+fallos graves. chat). fallan a
+menudo; se
+requiere un
+manejo de
+excepciones
+programático.
+Nivel de Bajo nivel Alto nivel (fácil Alto nivel (fácil LangGraph:
+Abstracción (mayor inicio, difícil prototipado). Una tesis
+control). personalizació doctoral
+n profunda). requiere
+control total
+sobre la lógica
+de ejecución.
+Los datos sugieren que mientras CrewAI es excelente para equipos de agentes que realizan
+tareas creativas o de marketing con una estructura clara 6, carece de la granularidad
+necesaria para manejar la compilación de código C++ o Python complejo donde el manejo del
+estado de error es vital. AutoGen, respaldado por Microsoft, es potente en la generación de
+código mediante conversación 4, pero su naturaleza conversacional puede introducir
+no-determinismo, lo cual es peligroso para la reproducibilidad científica. LangGraph, por el
+contrario, permite diseñar flujos de trabajo resilientes donde el estado se guarda en cada
+"super-paso", permitiendo que el Agente de Bitácora registre no solo el resultado, sino el
+
+--- Página 4 ---
+proceso de decisión exacto.9
+2.2 Arquitectura del Supervisor en LangGraph
+Para este proyecto, se implementará un patrón de Supervisor (o topología en estrella). El
+Supervisor es un nodo especial en el grafo que no ejecuta tareas operativas, sino que enruta
+el trabajo basándose en el estado actual y la entrada del usuario.11
+El estado global del sistema (AgentState) se definirá como un esquema tipado (usando
+Pydantic en Python) que contiene:
+1. research_context: Resúmenes de artículos recuperados.
+2. code_repository: Scripts de NS-3 generados y su estado de validación.
+3. simulation_logs: Rutas a los archivos de traza (PCAP, CSV) generados.
+4. analysis_results: Métricas procesadas y gráficos.
+5. audit_trail: Una lista inmutable de acciones para la bitácora.
+El Supervisor evalúa este estado y decide la transición al siguiente nodo. Por ejemplo, si
+code_repository contiene un script nuevo pero simulation_logs está vacío, el Supervisor
+transfiere el control al Agente de Simulación. Si el Agente de Simulación devuelve un error
+de compilación, el Supervisor redirige el flujo al Agente de Redacción de Código con el
+mensaje de error para su corrección.12 Esta arquitectura desacopla la lógica de control de la
+ejecución técnica, permitiendo que cada agente sea altamente especializado.
+3. Subsistema de Investigación Académica
+Automatizada
+El primer pilar funcional del sistema es la capacidad de realizar una revisión del estado del
+arte autónoma y gratuita. Dado que el usuario especifica "sin costo de suscripciones", el
+sistema no puede depender de bases de datos de pago como Scopus o Web of Science. La
+solución reside en la integración de APIs académicas abiertas.
+3.1 El Agente Investigador: Integración con Semantic Scholar y arXiv
+
+--- Página 5 ---
+Este agente utiliza la API de Semantic Scholar y arXiv para acceder a millones de artículos
+científicos gratuitos. Semantic Scholar es particularmente valioso porque su API proporciona
+no solo metadatos, sino también gráficos de citas, lo que permite al agente identificar los
+trabajos "seminales" en el campo del enrutamiento basado en IA.13
+El flujo de trabajo del Agente Investigador se estructura de la siguiente manera:
+1. Búsqueda Semántica: El agente recibe una consulta del Supervisor (ej. "Routing
+optimization in VANETs using GNN"). Utiliza la SemanticScholarAPIWrapper para realizar
+búsquedas, filtrando por artículos publicados en los últimos 3-5 años para asegurar
+relevancia reciente.15
+2. Recuperación y Filtrado: El agente descarga los metadatos y, cuando es posible, los
+PDFs de acceso abierto (principalmente de arXiv).
+3. Generación Aumentada por Recuperación (RAG) Local: Para que el agente pueda
+"leer" y sintetizar estos documentos sin enviar datos a la nube (privacidad y costo), se
+implementa un sistema RAG local.
+○ Base de Datos Vectorial: Se utiliza ChromaDB o FAISS, que son de código abierto
+y ejecutables localmente.17
+○ Embeddings Locales: Se utilizan modelos de embedding ligeros pero potentes
+como nomic-embed-text ejecutados a través de Ollama. Esto convierte los
+resúmenes y textos completos de los artículos en vectores numéricos almacenados
+en ChromaDB.19
+○ Síntesis: Cuando el Supervisor pregunta "¿Cuáles son las limitaciones de AODV en
+ciudades inteligentes según la literatura reciente?", el Agente Investigador consulta
+ChromaDB, recupera los fragmentos más relevantes y utiliza el LLM local (Llama 3)
+para generar una síntesis fundamentada con citas.20
+Este enfoque permite al sistema identificar "brechas de investigación" reales, como la falta de
+generalización de los modelos DRL tradicionales en topologías cambiantes, justificando así la
+propuesta de GNNs en la tesis.21
+4. El Núcleo de Simulación: Automatización de NS-3
+con LLMs
+El corazón técnico de la tesis es el simulador de redes NS-3. Integrar un simulador basado en
+C++ con agentes de IA presenta desafíos significativos. La literatura sugiere que, aunque
+NS-3 está escrito en C++, el uso de sus enlaces (bindings) de Python es la estrategia más
+
+--- Página 6 ---
+efectiva para la automatización mediante LLMs.22
+4.1 Agente Generador de Código de Simulación (GenOnet)
+Este agente se inspira en la arquitectura "GenOnet", que combina modelos de lenguaje con
+NS-3 para generar código de simulación.24
+● Preferencia por Python: Aunque NS-3 es nativo en C++, los LLMs actuales tienen una
+mayor tasa de éxito generando código Python correcto debido a la vastedad de ejemplos
+de Python en sus datos de entrenamiento. Además, Python no requiere el complejo paso
+de compilación y enlazado (Waf/CMake) que a menudo falla en C++ por dependencias de
+librerías faltantes.26 El agente generará scripts de Python que importan los módulos de
+NS-3 (import ns.core, import ns.network).
+● Razonamiento Cadena de Pensamiento (CoT): El agente no escribe el código de
+inmediato. Primero, planifica la simulación: "Para simular una red VANET en una ciudad
+inteligente, necesito: 1) Configurar nodos móviles usando Ns2MobilityHelper con trazas
+de tráfico real, 2) Instalar la pila WiFi 802.11p (WAVE), 3) Configurar el enrutamiento AODV
+como línea base".25
+● Validación y Auto-Corrección: El código generado se pasa al Agente Ejecutor. Si la
+ejecución falla (ej. AttributeError: module 'ns.network' has no attribute 'MobilityHelper'),
+el error se captura y se devuelve al Agente Generador. Este utiliza el mensaje de error
+para reescribir el script, un proceso iterativo que aumenta drásticamente la tasa de éxito
+de compilación.27
+4.2 Agente Ejecutor de Simulaciones
+Este agente opera en un entorno aislado (preferiblemente un contenedor Docker para
+reproducibilidad) donde NS-3 y sus dependencias están preinstaladas. Su función es ejecutar
+los scripts validados y gestionar los archivos de salida.
+● Manejo de Traza: Configura NS-3 para generar trazas XML de FlowMonitor y archivos
+PCAP para análisis profundo. Es crucial que este agente asegure que las simulaciones se
+ejecuten con semillas aleatorias variables para garantizar la validez estadística de los
+resultados.28
+● Gestión de Recursos: Dado que las simulaciones de NS-3 son intensivas en CPU, este
+agente monitoriza el uso de recursos y puede encolar simulaciones si el Supervisor
+solicita múltiples escenarios simultáneos (barrido de parámetros).
+
+--- Página 7 ---
+5. Integración de Inteligencia Artificial en Redes: El
+Puente NS-3-AI
+Para cumplir con el requisito de "proponer alternativas utilizando redes neuronales", el
+sistema no puede limitarse a simulaciones estáticas. Debe permitir que un modelo de IA
+interactúe con la red en tiempo real (ej. cambiar una ruta basándose en la congestión actual).
+Aquí es donde entra la elección entre ns3-gym y ns3-ai.
+5.1 Superioridad Técnica de ns3-ai sobre ns3-gym
+Aunque ns3-gym fue pionero en conectar NS-3 con OpenAI Gym 29, utiliza sockets para la
+comunicación entre el proceso C++ (NS-3) y el proceso Python (Agente RL). Esto introduce
+latencia y sobrecarga de serialización, lo cual puede ser un cuello de botella en simulaciones
+a gran escala de ciudades inteligentes.
+Para esta tesis, se recomienda encarecidamente el uso del módulo ns3-ai.
+● Mecanismo de Memoria Compartida: ns3-ai utiliza memoria compartida (Shared
+Memory) para el intercambio de datos entre C++ y Python. Esto permite una
+transferencia de información mucho más rápida (hasta 100 veces más rápida que los
+sockets), lo cual es crítico cuando se entrenan modelos complejos que requieren
+millones de pasos de interacción.31
+● Interoperabilidad: ns3-ai facilita la integración directa con bibliotecas modernas de
+Deep Learning como PyTorch o TensorFlow, que son las herramientas estándar para
+desarrollar las GNNs requeridas.32
+El Agente de Simulación, por tanto, no solo ejecutará scripts, sino que orquestará dos
+procesos concurrentes: el simulador NS-3 y el modelo de IA en Python, conectados a través
+de la interfaz de memoria compartida de ns3-ai.
+6. Agente Analista de Protocolos de Enrutamiento (El
+"Cerebro")
+
+--- Página 8 ---
+Este es el agente experto en el dominio de la tesis. Su rol no es ejecutar código, sino diseñar
+las arquitecturas de las redes neuronales que mejorarán el enrutamiento. Basándose en la
+literatura, este agente se centrará en dos enfoques avanzados: Aprendizaje por Refuerzo
+Profundo (DRL) y Redes Neuronales de Grafos (GNN).
+6.1 Estrategias de Optimización para Smart Cities
+El agente debe estar programado (mediante prompts de sistema avanzados) para entender
+las limitaciones específicas de las Smart Cities: alta movilidad de nodos (vehículos), topología
+dinámica y restricciones energéticas en sensores IoT.2
+6.1.1 De AODV a Q-Learning Distribuido
+Los protocolos tradicionales como AODV (Ad-hoc On-demand Distance Vector) son reactivos
+y a menudo inundan la red con mensajes de control. El agente propondrá sustituir las tablas
+de enrutamiento fijas por agentes de Q-Learning.
+● Propuesta Algorítmica: Cada nodo en la red actúa como un agente independiente que
+aprende una función Q (calidad de enlace). El estado incluye la longitud de la cola de
+paquetes y la energía residual; la acción es la selección del siguiente salto. El Agente
+Analista diseñará la función de recompensa para penalizar no solo la pérdida de
+paquetes, sino también el consumo excesivo de energía, alineándose con los objetivos de
+"Green IoT".33
+6.1.2 Generalización con Graph Neural Networks (GNN) - RouteNet
+El mayor avance que la tesis puede presentar es el uso de GNNs. Los métodos de DRL
+estándar fallan cuando la topología cambia drásticamente (algo común en VANETs). Las
+GNNs, sin embargo, pueden generalizar a topologías nunca vistas.
+● Arquitectura RouteNet: El Agente Analista propondrá la implementación de una variante
+de RouteNet.35 Esta arquitectura modela la red como un grafo donde los nodos
+(routers/vehículos) y los enlaces intercambian mensajes (vectores de características)
+
+--- Página 9 ---
+para predecir métricas como el retardo o el jitter de extremo a extremo.
+● Innovación: A diferencia de las soluciones heurísticas, el agente configurará la GNN para
+tomar como entrada la matriz de tráfico y la topología actual (extraída de NS-3 en tiempo
+real vía ns3-ai) y predecir los enlaces congestionados antes de que ocurra la pérdida de
+paquetes, permitiendo un enrutamiento proactivo inteligente.37
+7. Subsistema de Procesamiento de Datos y
+Visualización
+Una vez completadas las simulaciones, los datos brutos deben transformarse en evidencia
+científica.
+7.1 Agente de Post-Procesado
+Este agente utiliza Pandas para ingerir los archivos XML generados por el módulo
+FlowMonitor de NS-3.28
+● Cálculo de KPIs: Automatiza el cálculo de métricas críticas:
+○ Packet Delivery Ratio (PDR): Paquetes recibidos / Paquetes generados.
+○ End-to-End Delay: Promedio de tiempo de tránsito.
+○ Throughput: Bits recibidos por segundo.
+○ Overhead de Enrutamiento: Paquetes de control / Paquetes de datos.38
+● Limpieza de Datos: El agente identifica y descarta simulaciones fallidas (ej. PDR = 0) o
+valores atípicos causados por la fase de convergencia inicial de la simulación.
+7.2 Agente de Visualización (MatPlotAgent)
+Para la generación de gráficos, se emplea un enfoque similar a MatPlotAgent.39
+● Generación de Código: El LLM genera código Python utilizando Matplotlib y Seaborn.
+● Refinamiento Visual: El agente recibe instrucciones de estilo (ej. "usar estilo académico
+IEEE, fuentes serif, escala logarítmica para la latencia"). Si el gráfico resultante es ilegible
+(etiquetas superpuestas), el agente itera sobre el código de ploteo para corregirlo.
+● Automatización: Genera automáticamente comparativas visuales: "DRL vs AODV vs
+
+--- Página 10 ---
+OSPF" en diferentes densidades de nodos (50, 100, 200 vehículos), proporcionando la
+evidencia visual clave para la tesis.
+8. Agente de Bitácora y Reproducibilidad (Logbook)
+La reproducibilidad es la crisis central de la ciencia computacional moderna. Para una tesis
+doctoral, no basta con mostrar resultados; se debe demostrar cómo se obtuvieron. Aquí es
+donde la arquitectura de LangGraph brilla.
+8.1 Persistencia del Estado como Bitácora
+El Agente de Bitácora no es un agente activo que "escribe" en un archivo de texto
+manualmente, sino un proceso de escucha sobre el sistema de persistencia de LangGraph.
+● Checkpointing: Cada vez que un agente completa una tarea (ej. "Script generado",
+"Simulación finalizada"), LangGraph guarda un checkpoint del estado en una base de
+datos local (SQLite).10
+● Traza de Auditoría: El Agente de Bitácora exporta periódicamente estos checkpoints a
+un archivo bitacora_investigacion.md legible por humanos. Este archivo contiene:
+○ Timestamp y Hash del commit del código.
+○ Prompt exacto usado para generar el código de simulación (fundamental para
+entender por qué el agente eligió ciertos parámetros).
+○ Resultados crudos y errores encontrados.
+● Valor Académico: Este registro permite al doctorando reconstruir la historia de la
+investigación ("¿Por qué decidimos abandonar el protocolo OLSR en el mes 3?") y
+proporciona un anexo de reproducibilidad robusto para la defensa de la tesis.
+9. Infraestructura de Despliegue y Hardware (Coste
+Cero)
+Para cumplir estrictamente con el requisito de "gratuito y sin suscripciones", la infraestructura
+se basa en hardware local y capas gratuitas de la nube.
+
+--- Página 11 ---
+9.1 Motor de Inferencia Local: Ollama
+● Ollama: Es la herramienta estándar de facto para ejecutar LLMs localmente en Linux,
+Mac y Windows. Expone una API compatible con OpenAI en el puerto 11434, lo que
+facilita su integración con LangGraph.41
+● Selección de Modelos:
+○ Orquestador y Redacción: Llama 3 (8B) o Mistral 7B. Son modelos eficientes que
+caben en tarjetas gráficas de consumo o incluso en RAM de sistema (CPU inference).
+○ Programación (NS-3): DeepSeek Coder o CodeLlama. Estos modelos superan a los
+modelos generales en tareas de programación, crucial para generar scripts de NS-3
+válidos.42
+9.2 Estrategia Híbrida: Local + Google Colab
+Las simulaciones de redes neuronales y NS-3 pueden ser pesadas para una laptop estándar.
+● Google Colab (Capa Gratuita): Ofrece acceso gratuito a GPUs (T4). Se puede utilizar
+para entrenar los modelos GNN o ejecutar las simulaciones pesadas.
+● Túnel con ngrok: Para que el Orquestador (que corre en local) pueda mandar trabajos a
+Colab, se utiliza ngrok para exponer el puerto de Ollama o del servicio de simulación que
+corre en Colab hacia internet de forma segura y temporal.43 Esto permite crear una "nube
+privada híbrida" sin costo alguno.
+9.3 Tabla de Requisitos de Hardware Local
+Componente Requisito Mínimo Requisito Función
+Recomendado
+RAM 16 GB 32 GB Carga de modelos
+LLM cuantizados
+(4-bit) y ejecución
+de NS-3.
+
+--- Página 12 ---
+GPU N/A (Solo CPU) NVIDIA RTX 3060 Aceleración de
+(12GB VRAM) inferencia LLM y
+entrenamiento de
+GNNs.
+Almacenamiento 50 GB SSD 100 GB SSD Almacenamiento de
+trazas de
+simulación (PCAP
+pueden ser
+grandes).
+OS Linux (Ubuntu) Linux (Ubuntu NS-3 y ns3-ai
+22.04/24.04) tienen soporte
+nativo y estable en
+Linux.
+10. Estrategia de Implementación y Flujo de Trabajo
+Para materializar esta arquitectura, se propone el siguiente flujo de trabajo secuencial para el
+desarrollo del sistema:
+1. Fase 1: Infraestructura Base (Semana 1-2). Instalar Docker, Ollama y configurar el
+entorno Python con LangGraph. Validar la conexión con modelos locales.
+2. Fase 2: Agentes de Investigación (Semana 3-4). Implementar la conexión con
+Semantic Scholar y ChromaDB. Probar la capacidad del agente para resumir papers.
+3. Fase 3: Núcleo NS-3 (Semana 5-8). Compilar NS-3 con Python bindings y ns3-ai.
+Desarrollar el Agente Generador de Código y validar que puede crear scripts simples de
+"Ping" o "WiFi".
+4. Fase 4: Integración del "Cerebro" (Semana 9-12). Implementar el entorno de
+entrenamiento de DRL/GNN. Conectar el Agente Analista para que pueda modificar los
+parámetros de la red neuronal.
+5. Fase 5: Orquestación Completa (Semana 13+). Unir todos los agentes bajo el
+Supervisor de LangGraph. Ejecutar el primer experimento completo de "bucle cerrado":
+Investigar -> Simular -> Analizar -> Reportar.
+11. Conclusión
+
+--- Página 13 ---
+La arquitectura propuesta representa una vanguardia metodológica en la investigación
+doctoral. Al fusionar la potencia de simulación determinista de NS-3 con la capacidad
+cognitiva y generativa de los LLMs locales orquestados por LangGraph, se crea un sistema
+capaz de acelerar el ciclo de descubrimiento científico.
+Este sistema A2A no solo automatiza tareas tediosas, sino que habilita la exploración de
+espacios de soluciones complejos (como las GNNs en enrutamiento dinámico) que serían
+difíciles de gestionar manualmente. Al adherirse estrictamente a herramientas de código
+abierto y hardware accesible, esta propuesta garantiza la viabilidad económica y la
+sostenibilidad a largo plazo del proyecto de tesis, cumpliendo con los más altos estándares de
+rigor académico y reproducibilidad técnica. El Agente de Bitácora asegura que, al final del
+doctorado, no solo se tendrá una tesis escrita, sino un historial digital inmutable que valida
+cada descubrimiento realizado.
+Fuentes citadas
+1. Smart Cities, Volume 8, Issue 5 (October 2025) – 41 articles, acceso: noviembre
+22, 2025, https://www.mdpi.com/2624-6511/8/5
+2. (PDF) ADVANCES IN ROUTING PROTOCOLS AND MACHINE LEARNING
+TECHNIQUES FOR IOT NETWORKS: A COMPREHENSIVE REVIEW - ResearchGate,
+acceso: noviembre 22, 2025,
+https://www.researchgate.net/publication/389988828_ADVANCES_IN_ROUTING_
+PROTOCOLS_AND_MACHINE_LEARNING_TECHNIQUES_FOR_IOT_NETWORKS_A
+_COMPREHENSIVE_REVIEW
+3. Smart city article details, acceso: noviembre 22, 2025,
+https://smartcity.efri.uniri.hr/article.php?id=44899
+4. CrewAI vs LangGraph vs AutoGen: Choosing the Right Multi-Agent AI
+Framework, acceso: noviembre 22, 2025,
+https://www.datacamp.com/tutorial/crewai-vs-langgraph-vs-autogen
+5. Comparing 4 Agentic Frameworks: LangGraph, CrewAI, AutoGen, and Strands
+Agents | by Dr Alexandra Posoldova | Medium, acceso: noviembre 22, 2025,
+https://medium.com/@a.posoldova/comparing-4-agentic-frameworks-langgraph
+-crewai-autogen-and-strands-agents-b2d482691311
+6. CrewAI Vs AutoGen: A Complete Comparison of Multi-Agent AI Frameworks,
+acceso: noviembre 22, 2025,
+https://medium.com/@kanerika/crewai-vs-autogen-a-complete-comparison-of-
+multi-agent-ai-frameworks-3d2cec907231
+7. Crewai vs LangGraph: Know The Differences - TrueFoundry, acceso: noviembre
+22, 2025, https://www.truefoundry.com/blog/crewai-vs-langgraph
+8. Autogen vs CrewAI vs LangGraph 2025 Comparison Guide - Python in Plain
+English, acceso: noviembre 22, 2025,
+https://python.plainenglish.io/autogen-vs-crewai-vs-langgraph-2025-comparison
+-guide-7cad22747f11
+
+--- Página 14 ---
+9. How to Continuously Improve Your LangGraph Multi-Agent System - Galileo AI,
+acceso: noviembre 22, 2025,
+https://galileo.ai/blog/evaluate-langgraph-multi-agent-telecom
+10. Mastering Persistence in LangGraph: Checkpoints, Threads, and Beyond | by
+Vinod Rane, acceso: noviembre 22, 2025,
+https://medium.com/@vinodkrane/mastering-persistence-in-langgraph-checkpoi
+nts-threads-and-beyond-21e412aaed60
+11. AI Agents Need a Boss: Building with the Supervisor Pattern in LangGraph + MCP
+- Medium, acceso: noviembre 22, 2025,
+https://medium.com/@ashuashu20691/ai-agents-need-a-boss-building-with-the-
+supervisor-pattern-in-langgraph-mcp-9d8b7443e8fb
+12. Build a supervisor agent - Docs by LangChain, acceso: noviembre 22, 2025,
+https://docs.langchain.com/oss/python/langchain/supervisor
+13. Semantic Scholar Academic Graph API, acceso: noviembre 22, 2025,
+https://www.semanticscholar.org/product/api
+14. AI Research Assistant | MCP Server - Smithery, acceso: noviembre 22, 2025,
+https://smithery.ai/server/@hamid-vakilzadeh/mcpsemanticscholar
+15. SemanticScholarAPIWrapper — LangChain documentation, acceso: noviembre
+22, 2025,
+https://python.langchain.com/api_reference/community/utilities/langchain_comm
+unity.utilities.semanticscholar.SemanticScholarAPIWrapper.html
+16. semanticscholar, acceso: noviembre 22, 2025,
+https://semanticscholar.readthedocs.io/
+17. Building an Autonomous AI Research Agent with LangGraph and RAG - Medium,
+acceso: noviembre 22, 2025,
+https://medium.com/@maheshwari.sagars2000/building-an-autonomous-ai-rese
+arch-agent-with-langgraph-and-rag-a06807f62343
+18. Build Your Own RAG App: A Step-by-Step Guide to Setup LLM locally using
+Ollama, Python, and ChromaDB - DEV Community, acceso: noviembre 22, 2025,
+https://dev.to/nassermaronie/build-your-own-rag-app-a-step-by-step-guide-to-
+setup-llm-locally-using-ollama-python-and-chromadb-b12
+19. How to Implement RAG with ChromaDB and Ollama: A Python Guide for
+Beginners | by Arun Patidar | Medium, acceso: noviembre 22, 2025,
+https://medium.com/@arunpatidar26/how-to-implement-rag-with-chromadb-an
+d-ollama-a-python-guide-for-beginners-30857499d0a0
+20. I made this simple local RAG example using Langchain, ChromaDB & Ollama -
+Reddit, acceso: noviembre 22, 2025,
+https://www.reddit.com/r/ollama/comments/1joyhf5/i_made_this_simple_local_rag
+_example_using/
+21. Building an ArXiv Research Assistant with LangGraph, MongoDB, and AWS
+Bedrock, acceso: noviembre 22, 2025,
+https://threadwaiting.com/building-an-arxiv-research-assistant-with-langgraph-
+mongodb-and-aws-bedrock/
+22. Using Python to Run ns-3 — Manual, acceso: noviembre 22, 2025,
+https://www.nsnam.org/docs/release/3.36/manual/html/python.html
+
+--- Página 15 ---
+23. 3.8. Using Python to Run ns-3 — Manual, acceso: noviembre 22, 2025,
+https://www.nsnam.org/docs/manual/html/python.html
+24. [Literature Review] GenOnet: Generative Open xG Network Simulation with
+Multi-Agent LLM and ns-3 - Moonlight | AI Colleague for Research Papers,
+acceso: noviembre 22, 2025,
+https://www.themoonlight.io/en/review/genonet-generative-open-xg-network-si
+mulation-with-multi-agent-llm-and-ns-3
+25. [2503.13402] Toward Generative 6G Simulation: An Experimental Multi-Agent LLM
+and ns-3 Integration - arXiv, acceso: noviembre 22, 2025,
+https://arxiv.org/abs/2503.13402
+26. What Makes ns-3 a Complex Thing to Understand and Use? - Charles Pandian,
+acceso: noviembre 22, 2025,
+https://www.projectguideline.com/what-makes-ns-3-a-complex-thing-to-unders
+tand-and-use/
+27. Toward Generative 6G Simulation: An Experimental Multi-Agent LLM and ns-3
+Integration - arXiv, acceso: noviembre 22, 2025, https://arxiv.org/pdf/2503.13402
+28. 15. Flow Monitor — Model Library - ns-3, acceso: noviembre 22, 2025,
+https://www.nsnam.org/docs/models/html/flow-monitor.html
+29. ns3-gym - The Playground for Reinforcement Learning in Networking Research -
+GitHub, acceso: noviembre 22, 2025, https://github.com/tkn-tub/ns3-gym
+30. [1810.03943] ns3-gym: Extending OpenAI Gym for Networking Research - arXiv,
+acceso: noviembre 22, 2025, https://arxiv.org/abs/1810.03943
+31. Using AI/ML frameworks with ns-3, acceso: noviembre 22, 2025,
+https://www.nsnam.org/wp-content/uploads/2021/tutorials/ns3-ai-tutorial-June-2
+021.pdf
+32. Steps to Implement Artificial Intelligence for Networks in ns3 - Ns3 Projects,
+acceso: noviembre 22, 2025,
+https://ns3simulation.com/how-to-implement-artificial-intelligence-for-networks
+-in-ns3/
+33. QLB-IoT: Intelligent and Trust-Aware Routing for IoT-Edge Networks with
+Blockchain-Assisted Q-Learning - ResearchGate, acceso: noviembre 22, 2025,
+https://www.researchgate.net/publication/396421790_QLB-IoT_Intelligent_and_Tr
+ust-Aware_Routing_for_IoT-Edge_Networks_with_Blockchain-Assisted_Q-Learnin
+g
+34. Q-RPL: Q-Learning-Based Routing Protocol for Advanced Metering Infrastructure
+in Smart Grids - MDPI, acceso: noviembre 22, 2025,
+https://www.mdpi.com/1424-8220/24/15/4818
+35. RouteNet-Erlang: A Graph Neural Network for Network Performance Evaluation -
+UPCommons, acceso: noviembre 22, 2025,
+https://upcommons.upc.edu/bitstreams/428df642-5b76-49af-b015-0acab6ab7f9
+2/download
+36. (PDF) QT-Routenet: Improved GNN generalization to larger 5G networks by
+fine-tuning predictions from queueing theory - ResearchGate, acceso:
+noviembre 22, 2025,
+https://www.researchgate.net/publication/361969793_QT-Routenet_Improved_GN
+
+--- Página 16 ---
+N_generalization_to_larger_5G_networks_by_fine-tuning_predictions_from_queu
+eing_theory
+37. Graph Neural Networks for Routing Optimization: Challenges and Opportunities -
+MDPI, acceso: noviembre 22, 2025, https://www.mdpi.com/2071-1050/16/21/9239
+38. (PDF) REINFORCEMENT LEARNING-BASED ROUTING PROTOCOLS FOR
+INTERNET OF THINGS NETWORKS: A COMPREHENSIVE SURVEY AND FUTURE
+RESEARCH DIRECTIONS - ResearchGate, acceso: noviembre 22, 2025,
+https://www.researchgate.net/publication/394863432_REINFORCEMENT_LEARNIN
+G-BASED_ROUTING_PROTOCOLS_FOR_INTERNET_OF_THINGS_NETWORKS_A_C
+OMPREHENSIVE_SURVEY_AND_FUTURE_RESEARCH_DIRECTIONS
+39. thunlp/MatPlotAgent - GitHub, acceso: noviembre 22, 2025,
+https://github.com/thunlp/MatPlotAgent
+40. Need guidance on using LangGraph Checkpointer for persisting chatbot sessions
+- Reddit, acceso: noviembre 22, 2025,
+https://www.reddit.com/r/LangChain/comments/1on4ym0/need_guidance_on_usi
+ng_langgraph_checkpointer_for/
+41. Mastering Ollama: Run AI Models Locally for Secure, Offline Projects - Medium,
+acceso: noviembre 22, 2025,
+https://medium.com/@rajkumarkumawat/mastering-ollama-run-ai-models-locally
+-for-secure-offline-projects-fa19fbb13afb
+42. AMD tested 20+ local models for coding & only 2 actually work (testing linked) -
+Reddit, acceso: noviembre 22, 2025,
+https://www.reddit.com/r/LocalLLaMA/comments/1nufu17/amd_tested_20_local_
+models_for_coding_only_2/
+43. [Guide] How to Run Ollama-OCR on Google Colab (Free Tier!) - Reddit, acceso:
+noviembre 22, 2025,
+https://www.reddit.com/r/ollama/comments/1jbqvzy/guide_how_to_run_ollamaocr
+_on_google_colab_free/
+44. Using ngrok with Google Colab, acceso: noviembre 22, 2025,
+https://ngrok.com/docs/using-ngrok-with/googleColab

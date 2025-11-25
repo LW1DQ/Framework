@@ -3,41 +3,103 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
 env/
 venv/
 .env
 .venv
 .conda/
 conda/
+ENV/
+env.bak/
+venv.bak/
 pip-log.txt
 pip-delete-this-directory.txt
 
 # NS-3
 ns-3.*/
 ns-3-dev/
+ns-allinone-*/
 build/
 .lock-waf*
 .waf*
+*.pcap
+*.xml
+*.tr
+*.dat
 
 # Logs and Results
 logs/
+*.log
 simulations/results/*.pcap
 simulations/results/*.xml
 simulations/results/*.txt
 simulations/scripts/backups/
+simulations/scripts/sim_*.py
+simulations/visualizations/*.png
+simulations/visualizations/*.html
+simulations/analysis/*.md
 system_state.json
 simulation_metrics.csv
+
+# Checkpoints
+*.db
+*.sqlite
 
 # IDE
 .vscode/
 .idea/
 *.swp
+*.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Exceptions (Keep these)
+# Temporal
+tmp/
+temp/
+*.tmp
+
+# Ollama (no subir modelos)
+.ollama/
+
+# Archivos grandes
+*.zip
+*.tar.gz
+*.rar
+
+# Excepciones (archivos que SÍ queremos subir)
 !simulations/results/.gitkeep
 !simulations/scripts/.gitkeep
+!sistema-a2a-v1.3-ubuntu.zip
+
+# Documentos temporales de trabajo
+GUIA-INVESTIGADORES-CREADA.md
+GUIA-INVESTIGADORES-COMPLETADA.md
+ESTADO-GUIA-INVESTIGADORES.txt
+RESUMEN-TRABAJO-COMPLETADO.md
+ORGANIZACION-COMPLETADA.md
+EXPORTACION-UBUNTU-COMPLETADA.md
+ESTRUCTURA-PROYECTO.md
