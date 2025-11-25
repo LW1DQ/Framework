@@ -1,8 +1,11 @@
 # Changelog
 
-Todas las mejoras notables del proyecto "AGENTES A2A" se documentarán en este archivo.
+Todas las mejoras notables del proyecto "Sistema A2A" se documentarán en este archivo.
 
-## [v1.4] - 2025-11-25
+El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
+y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
+
+## [v1.4.0] - 2025-11-25
 
 ### 🚀 Nuevo
 - **Agente de IA (PPO)**: Implementación real de Deep Reinforcement Learning usando PyTorch. Reemplaza los placeholders anteriores.

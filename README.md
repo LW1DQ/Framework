@@ -1,9 +1,17 @@
+# 🤖 Sistema A2A v1.4 - Framework Multi-Agente para Optimización de Protocolos de Enrutamiento
+
+[![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![NS-3](https://img.shields.io/badge/NS--3-3.30%2B-orange)](https://www.nsnam.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-red)](https://pytorch.org/)
+
+Sistema Multi-Agente inteligente para investigación en redes de telecomunicaciones, con capacidades de Deep Reinforcement Learning y análisis automatizado de protocolos de enrutamiento MANET/VANET/WSN.
 
 ---
 
 ## 📋 Tabla de Contenidos
 
-- [Novedades v1.3](#-novedades-v13)
+- [Novedades v1.4](#-novedades-v14)
 - [Características](#-características)
 - [Inicio Rápido](#-inicio-rápido)
 - [Arquitectura](#-arquitectura)
@@ -19,9 +27,31 @@
 
 ---
 
-## ✨ Novedades v1.3
+## ✨ Novedades v1.4
 
-### 🎯 Mejoras Implementadas (Noviembre 2025)
+### 🚀 Nuevas Funcionalidades (Noviembre 2025)
+
+1. **🤖 Deep Reinforcement Learning Real (PPO con PyTorch)**
+   - Implementación completa de Proximal Policy Optimization
+   - Red neuronal Actor-Critic funcional
+   - Entrenamiento episódico automático
+   - Persistencia de modelos (.pth)
+   - Integración preparada con ns3-ai
+
+2. **📊 Dashboard en Tiempo Real (Streamlit)**
+   - Monitoreo visual del estado del sistema
+   - Gráficos interactivos de métricas (PDR, Delay, Throughput)
+   - Logs en vivo de agentes
+   - Auto-refresh configurable
+   - Visualización de propuestas de optimización
+
+3. **📝 Sistema de Logging y Telemetría**
+   - Logging centralizado con `logging_utils`
+   - Estado del sistema en JSON
+   - Métricas históricas en CSV
+   - Auditoría completa de acciones
+
+### 🎯 Mejoras de v1.3 (Incluidas)
 
 1. **🎲 Reproducibilidad Total**
    - Control de semillas aleatorias
