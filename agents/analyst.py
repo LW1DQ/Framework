@@ -94,6 +94,15 @@ def calculate_kpis(df: pd.DataFrame) -> Dict:
     # Calcular tasa de éxito
     kpis['success_rate'] = (kpis['successful_flows'] / kpis['total_flows'] * 100) if kpis['total_flows'] > 0 else 0
     
+    # Calcular jitter (variación de delay)
+    if 'avg_delay_ms' in df.columns and len(df) > 1:
+        import numpy as np
+        delays = df['avg_delay_ms'].values
+        jitter = np.mean(np.abs(np.diff(delays)))
+        kpis['jitter_ms'] = float(jitter)
+    else:
+        kpis['jitter_ms'] = 0.0
+    
     # Calcular eficiencia de red
     kpis['network_efficiency'] = (kpis['avg_pdr'] * kpis['avg_throughput']) / (kpis['avg_delay'] + 1)
     

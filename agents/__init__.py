@@ -12,6 +12,7 @@ from .visualizer import visualizer_node
 from .github_manager import github_manager_node
 from .optimizer import optimizer_node
 from .trace_analyzer import trace_analyzer_node
+from .scientific_writer import scientific_writer_node
 
 __all__ = [
     'research_node',
@@ -21,5 +22,6 @@ __all__ = [
     'visualizer_node',
     'github_manager_node',
     'optimizer_node',
-    'trace_analyzer_node'
+    'trace_analyzer_node',
+    'scientific_writer_node'
 ]

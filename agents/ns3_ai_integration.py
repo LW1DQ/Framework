@@ -91,6 +91,8 @@ class NS3AIAgent:
         self.shm_name = shm_name
         self.model_path = model_path
         self.policy = ActorCritic(STATE_DIM, ACTION_DIM)
+        self.step_count = 0
+        self.episode_rewards = []
         
         if HAS_TORCH and model_path and os.path.exists(model_path):
             try:
@@ -103,66 +105,167 @@ class NS3AIAgent:
             self.policy.eval()
 
         # Inicializar interfaz de memoria compartida (si ns3-ai está disponible)
-        self.rb = None
+        self.interface = None
         if HAS_NS3_AI:
-            # RingBuffer para intercambio de datos
-            # Estructura C++ esperada:
-            # struct EnvState { float features[10]; };
-            # struct Act { int action; };
-            self.rb = RingBuffer(shm_name, MEM_SIZE)
+            try:
+                # Usar Ns3AiMsgInterface para comunicación estructurada
+                from ns3_ai import Ns3AiMsgInterface
+                
+                # Definir estructuras de comunicación
+                # Deben coincidir con las definidas en C++ (drl-routing-agent.h)
+                self.interface = Ns3AiMsgInterface(
+                    shm_name,
+                    size=MEM_SIZE,
+                    isMemoryCreator=False  # Python es el consumidor
+                )
+                print(f"✅ Interfaz ns3-ai inicializada: {shm_name}")
+            except Exception as e:
+                print(f"⚠️ Error inicializando ns3-ai: {e}")
+                print(f"   Ejecutando en modo simulado")
+                self.interface = None
+        else:
+            print(f"⚠️ ns3-ai no disponible. Ejecutando en modo simulado")
 
     def run_interaction_loop(self, max_steps: int = 1000):
         """
         Ejecuta el bucle principal de interacción con NS-3
+        
+        Args:
+            max_steps: Número máximo de pasos de interacción
         """
-        if not self.rb:
-            print("❌ ns3-ai no disponible. No se puede ejecutar el bucle de interacción.")
-            return
+        if not self.interface and not HAS_NS3_AI:
+            print("❌ ns3-ai no disponible. Ejecutando en modo simulado...")
+            return self._run_simulated_loop(max_steps)
 
         print(f"🚀 Iniciando bucle de interacción NS-3 AI (SHM: {self.shm_name})...")
+        print(f"   Modelo: {self.model_path if self.model_path else 'Aleatorio'}")
+        print(f"   Max steps: {max_steps}")
+        print("")
         
         step = 0
+        episode_reward = 0.0
+        
         try:
             while step < max_steps:
-                # 1. Leer Observación desde NS-3
-                # Esperar a que haya datos disponibles
-                while self.rb.is_empty():
-                    time.sleep(0.001) # Pequeña espera para no saturar CPU
+                # 1. Leer Estado desde NS-3 (vía memoria compartida)
+                if self.interface:
+                    try:
+                        # Leer estructura EnvState desde C++
+                        state_data = self.interface.GetCpp2PyStruct()
+                        
+                        # Convertir a numpy array
+                        state = np.array([
+                            state_data.buffer_occupancy,
+                            state_data.num_neighbors,
+                            state_data.recent_pdr,
+                            state_data.recent_delay,
+                            state_data.distance_to_dest,
+                            state_data.hops_to_dest,
+                            state_data.energy_level,
+                            state_data.avg_neighbor_load,
+                            state_data.packet_priority,
+                            state_data.time_in_queue
+                        ], dtype=np.float32)
+                    except Exception as e:
+                        print(f"⚠️ Error leyendo estado: {e}")
+                        state = np.random.rand(STATE_DIM).astype(np.float32)
+                else:
+                    # Modo simulado
+                    state = np.random.rand(STATE_DIM).astype(np.float32)
                 
-                # Leer datos crudos (asumiendo 10 floats = 40 bytes)
-                # Nota: ns3-ai maneja la serialización, aquí simplificamos
-                # En producción real usaríamos las utilidades de struct de Python
-                
-                # Simulación de lectura (adaptar según API exacta de ns3-ai)
-                # data = self.rb.get() 
-                # state = struct.unpack('10f', data)
-                
-                # MOCK para demostración de flujo (ya que no tenemos ns3-ai real corriendo)
-                state = np.random.rand(STATE_DIM)
-                
-                # 2. Inferencia (Select Action)
+                # 2. Inferencia (Seleccionar Acción)
                 action = 0
+                action_probs = None
+                
                 if HAS_TORCH:
                     state_tensor = torch.FloatTensor(state).unsqueeze(0)
                     with torch.no_grad():
-                        probs, _ = self.policy(state_tensor)
-                        action = torch.argmax(probs).item()
+                        probs, value = self.policy(state_tensor)
+                        action = torch.argmax(probs, dim=1).item()
+                        action_probs = probs.squeeze().numpy()
+                else:
+                    action = np.random.randint(0, ACTION_DIM)
                 
                 # 3. Escribir Acción hacia NS-3
-                # self.rb.put(struct.pack('i', action))
+                if self.interface:
+                    try:
+                        # Crear estructura AgentAction
+                        action_data = self.interface.GetPy2CppStruct()
+                        action_data.next_hop_id = action
+                        action_data.tx_power = 1.0
+                        action_data.priority = 0
+                        
+                        # Enviar a NS-3
+                        self.interface.SetPy2CppStruct(action_data)
+                    except Exception as e:
+                        print(f"⚠️ Error enviando acción: {e}")
+                
+                # 4. Calcular recompensa (simplificado)
+                # En implementación real, NS-3 enviaría la recompensa
+                reward = state[2] - 0.1 * state[3] / 100.0  # PDR - delay_penalty
+                episode_reward += reward
                 
                 step += 1
+                self.step_count += 1
+                
+                # Logging periódico
                 if step % 100 == 0:
-                    print(f"  🔄 Step {step}: Action {action}")
+                    print(f"  🔄 Step {step}/{max_steps}")
+                    print(f"     Estado: PDR={state[2]:.3f}, Delay={state[3]:.1f}ms, Neighbors={state[1]:.0f}")
+                    print(f"     Acción: {action} (probs: {action_probs if action_probs is not None else 'N/A'})")
+                    print(f"     Recompensa acumulada: {episode_reward:.2f}")
+                    print("")
+                
+                # Pequeña pausa para no saturar
+                time.sleep(0.001)
                     
         except KeyboardInterrupt:
-            print("🛑 Interacción detenida por usuario")
+            print("\n🛑 Interacción detenida por usuario")
         except Exception as e:
-            print(f"❌ Error en bucle de interacción: {e}")
+            print(f"\n❌ Error en bucle de interacción: {e}")
+            import traceback
+            traceback.print_exc()
         finally:
-            if self.rb:
-                # self.rb.close() # Si existe método close
-                pass
+            print(f"\n📊 Estadísticas finales:")
+            print(f"   Steps ejecutados: {step}")
+            print(f"   Recompensa total: {episode_reward:.2f}")
+            print(f"   Recompensa promedio: {episode_reward/step if step > 0 else 0:.3f}")
+            
+            self.episode_rewards.append(episode_reward)
+    
+    def _run_simulated_loop(self, max_steps: int):
+        """
+        Ejecuta bucle simulado cuando ns3-ai no está disponible
+        """
+        print("🎮 Ejecutando en modo SIMULADO (sin ns3-ai)")
+        print(f"   Generando {max_steps} interacciones simuladas...")
+        print("")
+        
+        episode_reward = 0.0
+        
+        for step in range(max_steps):
+            # Estado simulado
+            state = np.random.rand(STATE_DIM).astype(np.float32)
+            
+            # Acción simulada
+            if HAS_TORCH:
+                state_tensor = torch.FloatTensor(state).unsqueeze(0)
+                with torch.no_grad():
+                    probs, _ = self.policy(state_tensor)
+                    action = torch.argmax(probs).item()
+            else:
+                action = np.random.randint(0, ACTION_DIM)
+            
+            # Recompensa simulada
+            reward = np.random.randn() * 0.1
+            episode_reward += reward
+            
+            if (step + 1) % 100 == 0:
+                print(f"  🔄 Step {step+1}/{max_steps} - Reward: {episode_reward:.2f}")
+        
+        print(f"\n✅ Simulación completada")
+        print(f"   Recompensa total: {episode_reward:.2f}")
+        self.episode_rewards.append(episode_reward)
 
 def generate_ns3_ai_code(protocol: str, nodes: int, area_size: int) -> str:
     """

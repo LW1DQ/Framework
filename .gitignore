@@ -109,7 +109,32 @@ QUICK-START-v1.3.txt
 LEEME-ACTUALIZACION-v1.3.txt
 FLUJO-ACTUALIZADO-v1.3.txt
 INDICE-DOCUMENTACION.md
-TODO.md
 LEEME-IMPORTANTE.txt
 *.bak
 *.backup
+
+# Archivos de sesión y checkpoints (no subir a GitHub)
+SESION-*.md
+ETAPA-*.md
+ESTADO-*.md
+RESUMEN-*.md
+MEJORAS-*.md
+SISTEMA-*.md
+AGENTE-*.md
+LEEME-PRIMERO.txt
+*-RESUMEN.md
+*-COMPLETADO.md
+*-AÑADIDO.md
+
+# Documentos generados (resultados de experimentos)
+generated_documents/
+experiments/results/*/
+!experiments/results/.gitkeep
+
+# Datos de ChromaDB
+data/vector_db/
+data/chroma/
+
+# Checkpoints de LangGraph
+checkpoints.db
+*.checkpoint

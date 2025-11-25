@@ -1,0 +1,61 @@
+# Experimento: Impacto de la Movilidad
+# Objetivo: Evaluar cómo afecta la velocidad de los nodos al rendimiento
+
+experiment:
+  name: "mobility_impact"
+  description: "Análisis del impacto de la movilidad en AODV"
+  repetitions: 5
+  max_iterations: 5
+
+scenarios:
+  # Escenario 1: Baja movilidad (1-5 m/s)
+  - name: "AODV_low_mobility"
+    protocol: "AODV"
+    nodes: 20
+    area: 1000
+    duration: 200
+    mobility: "RandomWaypoint"
+    speed: "1-5"
+    base_seed: 10000
+  
+  # Escenario 2: Media movilidad (5-15 m/s)
+  - name: "AODV_medium_mobility"
+    protocol: "AODV"
+    nodes: 20
+    area: 1000
+    duration: 200
+    mobility: "RandomWaypoint"
+    speed: "5-15"
+    base_seed: 20000
+  
+  # Escenario 3: Alta movilidad (15-25 m/s)
+  - name: "AODV_high_mobility"
+    protocol: "AODV"
+    nodes: 20
+    area: 1000
+    duration: 200
+    mobility: "RandomWaypoint"
+    speed: "15-25"
+    base_seed: 30000
+  
+  # Escenario 4: Muy alta movilidad (25-35 m/s)
+  - name: "AODV_very_high_mobility"
+    protocol: "AODV"
+    nodes: 20
+    area: 1000
+    duration: 200
+    mobility: "RandomWaypoint"
+    speed: "25-35"
+    base_seed: 40000
+
+metrics:
+  - pdr
+  - delay
+  - throughput
+  - overhead
+
+analysis:
+  confidence_level: 0.95
+  tests:
+    - correlation
+    - anova

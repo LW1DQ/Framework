@@ -23,10 +23,10 @@ from agents import (
     analyst_node,
     visualizer_node,
     github_manager_node,
-    github_manager_node,
     optimizer_node
 )
 from agents.critic import critic_node
+from agents.scientific_writer import scientific_writer_node
 from config.settings import LOGS_DIR
 
 
@@ -48,8 +48,8 @@ class SupervisorOrchestrator:
         self.workflow.add_node("analyst", analyst_node)
         self.workflow.add_node("visualizer", visualizer_node)
         self.workflow.add_node("optimizer", optimizer_node)
-        self.workflow.add_node("optimizer", optimizer_node)
         self.workflow.add_node("github_manager", github_manager_node)
+        self.workflow.add_node("scientific_writer", scientific_writer_node)
         self.workflow.add_node("critic", critic_node)
         
         # Definir flujo de trabajo
@@ -251,6 +251,7 @@ class SupervisorOrchestrator:
         """
         from uuid import uuid4
         from utils.state import create_initial_state
+        from utils.logging_utils import set_system_status
         
         if thread_id is None:
             thread_id = str(uuid4())
@@ -271,6 +272,9 @@ class SupervisorOrchestrator:
         print(f"🆔 Thread ID: {thread_id}")
         print(f"🔄 Max iteraciones: {max_iterations}")
         print("="*80)
+        
+        # Actualizar estado del sistema para dashboard
+        set_system_status("running", task=task, iteration=0, max_iterations=max_iterations)
         
         update_agent_status("Supervisor", "running", f"Iniciando experimento: {task}")
         log_message("Supervisor", f"Iniciando experimento. Thread ID: {thread_id}")
@@ -293,6 +297,9 @@ class SupervisorOrchestrator:
             print("\n" + "="*80)
             print("🎉 EXPERIMENTO COMPLETADO")
             print("="*80)
+            
+            # Actualizar estado del sistema
+            set_system_status("completed", task=task)
             
             log_message("Supervisor", "Experimento completado exitosamente")
             update_agent_status("Supervisor", "completed", "Experimento finalizado")
@@ -319,6 +326,10 @@ class SupervisorOrchestrator:
             print(f"\n❌ ERROR EN EXPERIMENTO: {str(e)}")
             import traceback
             traceback.print_exc()
+            
+            # Actualizar estado del sistema
+            set_system_status("failed", task=task)
+            
             log_message("Supervisor", f"Error crítico en experimento: {e}", level="ERROR")
             update_agent_status("Supervisor", "failed", f"Error: {str(e)[:50]}")
             return None

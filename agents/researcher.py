@@ -10,6 +10,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from typing import Dict
+import time
+from functools import wraps
 from langchain_ollama import ChatOllama
 from chromadb import Client
 import requests
@@ -25,6 +27,31 @@ from utils.state import AgentState, add_audit_entry
 from utils.logging_utils import update_agent_status, log_message
 
 
+def rate_limit(calls_per_minute: int = 10):
+    """
+    Decorador para limitar la tasa de llamadas a APIs
+    
+    Args:
+        calls_per_minute: Número máximo de llamadas por minuto
+    """
+    min_interval = 60.0 / calls_per_minute
+    last_called = [0.0]
+    
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            elapsed = time.time() - last_called[0]
+            left_to_wait = min_interval - elapsed
+            if left_to_wait > 0:
+                time.sleep(left_to_wait)
+            ret = func(*args, **kwargs)
+            last_called[0] = time.time()
+            return ret
+        return wrapper
+    return decorator
+
+
+@rate_limit(calls_per_minute=10)
 def search_semantic_scholar(query: str, max_results: int = 10) -> list:
     """
     Busca papers en Semantic Scholar con filtros avanzados
@@ -130,7 +157,13 @@ def store_in_chromadb(papers: list, collection_name: str = "thesis_papers"):
         collection_name: Nombre de la colección
     """
     try:
-        client = Client()
+        from chromadb import PersistentClient
+        from chromadb.config import Settings
+        
+        client = PersistentClient(
+            path=str(CHROMA_PATH),
+            settings=Settings(anonymized_telemetry=False)
+        )
         collection = client.get_or_create_collection(collection_name)
         
         for i, paper in enumerate(papers):
@@ -252,7 +285,13 @@ def query_vectordb(query: str, collection_name: str = "thesis_papers", n_results
         Lista de documentos relevantes
     """
     try:
-        client = Client()
+        from chromadb import PersistentClient
+        from chromadb.config import Settings
+        
+        client = PersistentClient(
+            path=str(CHROMA_PATH),
+            settings=Settings(anonymized_telemetry=False)
+        )
         collection = client.get_or_create_collection(collection_name)
         
         results = collection.query(

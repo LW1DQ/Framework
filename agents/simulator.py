@@ -241,39 +241,59 @@ def simulator_node(state: AgentState) -> Dict:
             for warning in sim_info['warnings'][:3]:
                 print(f"     {warning}")
         
-        # Parsear métricas del stdout (si el script las imprime en formato JSON o similar)
-        # Por ahora asumimos que el script imprime métricas o genera XML
-        
-        # Buscar archivo de resultados XML (si existe)
+        # Buscar archivo de resultados XML
         results_file = NS3_ROOT / "resultados.xml"
+        results_dir = SIMULATIONS_DIR / "results" / timestamp
+        results_dir.mkdir(parents=True, exist_ok=True)
         
-        if not results_file.exists():
-            # Si no hay XML, intentamos parsear stdout
-            print("\n  ⚠️  No se generó resultados.xml, intentando parsear stdout...")
-            # Aquí podríamos agregar lógica de parsing de stdout si el script imprime "PDR: 95.5"
-            pass
-
-        # ... (Resto de la lógica de movimiento de archivos se mantiene igual, simplificada aquí)
+        moved_results_file = None
+        if results_file.exists():
+            # Mover XML a directorio de resultados
+            moved_results_file = results_dir / f"sim_{timestamp}.xml"
+            shutil.move(str(results_file), str(moved_results_file))
+            print(f"\n  ✅ Resultados XML: {moved_results_file.name}")
+        else:
+            print("\n  ⚠️  No se generó resultados.xml")
+        
+        # Buscar y mover archivos PCAP
+        print(f"\n  🔍 Buscando archivos PCAP...")
+        pcap_pattern = "simulacion-*.pcap"
+        pcap_files_found = list(NS3_ROOT.glob(pcap_pattern))
+        
+        moved_pcaps = []
+        if pcap_files_found:
+            print(f"  📡 Archivos PCAP encontrados: {len(pcap_files_found)}")
+            
+            for pcap_file in pcap_files_found:
+                dest = results_dir / pcap_file.name
+                shutil.move(str(pcap_file), str(dest))
+                moved_pcaps.append(str(dest))
+                print(f"     ✓ {pcap_file.name} → {dest.name}")
+        else:
+            print(f"  ⚠️  No se encontraron archivos PCAP (patrón: {pcap_pattern})")
+        
+        # Guardar stdout
+        stdout_file = results_dir / f"sim_{timestamp}_stdout.txt"
+        with open(stdout_file, 'w', encoding='utf-8') as f:
+            f.write(result.stdout)
         
         print(f"  ✅ Simulación completada exitosamente")
+        print(f"  📁 Resultados en: {results_dir}")
         
-        # Métricas simuladas para el ejemplo (en producción parsearíamos el XML o stdout real)
-        pdr = 95.5 
-        delay = 12.5
-        throughput = 1.2
-        
-        log_metric(pdr, delay, throughput)
-        log_message("Simulator", f"Simulación completada. PDR: {pdr}%, Delay: {delay}ms")
+        log_message("Simulator", f"Simulación completada. Archivos: XML={moved_results_file is not None}, PCAP={len(moved_pcaps)}")
         update_agent_status("Simulator", "completed", "Simulación finalizada")
         
         return {
             'simulation_status': 'completed',
-            'simulation_logs': result.stdout[:1000], # Guardar log parcial
+            'simulation_logs': str(moved_results_file) if moved_results_file else str(stdout_file),
+            'pcap_files': moved_pcaps,
             'simulation_info': sim_info,
             'execution_time': execution_time,
             **add_audit_entry(state, "simulator", "simulation_completed", {
                 'execution_time': execution_time,
-                'nodes': sim_info['nodes_created']
+                'nodes': sim_info['nodes_created'],
+                'pcap_files_count': len(moved_pcaps),
+                'results_dir': str(results_dir)
             })
         }
         
