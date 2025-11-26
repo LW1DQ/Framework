@@ -7,6 +7,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.2] - 2025-11-26
+
+### Documentation
+- **Standardization** - Updated all documentation to be professional and consistent (English).
+- **Installation** - Prioritized `install.sh` automated installation in `README.md`, `INSTALL.md`, and `MANUAL_USUARIO.md`.
+- **New Guides**
+  - `docs/SCIENTIFIC_GUIDE.md` - Comprehensive guide on reproducibility, PCAP analysis, and statistical reporting.
+- **Cleanup** - Removed outdated files (`INSTALACION-COMPLETA.md`, `GUIA-USO-NUEVAS-FUNCIONALIDADES.md`, `COMMIT_GUIDE.md`).
+
+---
+
+## [1.5.1] - 2025-11-25
+
+### 🎉 Feature Release - HWMP (IEEE 802.11s) Mesh Protocol Support
+
+This release adds complete support for HWMP (Hybrid Wireless Mesh Protocol), the default routing protocol for IEEE 802.11s mesh networks, enabling simulation and optimization of WiFi mesh networks for smart cities.
+
+### Added
+
+#### Protocol Support
+- **HWMP Protocol** - IEEE 802.11s mesh networking support
+  - Automatic code generation with `MeshHelper`
+  - IEEE 802.11s WiFi standard configuration
+  - Hybrid routing (reactive + proactive)
+  - Ideal for urban mesh networks and smart city infrastructure
+
+#### Experiment Configurations
+- **`hwmp_comparison.yaml`** - Compare HWMP vs AODV vs OLSR
+  - 3 protocols × 10 repetitions = 30 simulations
+  - Static topology (typical for mesh infrastructure)
+  - Statistical comparison (T-test, ANOVA)
+  
+- **`hwmp_mesh_scalability.yaml`** - HWMP scalability analysis
+  - 5 network sizes: 10, 20, 30, 50, 75 nodes
+  - 10 repetitions per size = 50 simulations
+  - Regression analysis and correlation tests
+
+#### Documentation
+- **`docs/HWMP_GUIDE.md`** - Complete HWMP usage guide (300+ lines)
+  - Introduction to HWMP and IEEE 802.11s
+  - Comparison with MANET protocols
+  - Usage instructions in the framework
+  - Smart city applications
+  - Expected metrics and performance
+  - Troubleshooting guide
+  - Best practices
+
+#### Testing
+- **`tests/test_hwmp_support.py`** - Automated validation tests
+  - Code generation verification
+  - YAML configuration validation
+  - Import detection testing
+
+### Improved
+
+#### Agents
+- **Coder Agent** - Enhanced protocol detection
+  - Detects HWMP in user requests
+  - Generates mesh-specific code with `MeshHelper`
+  - Automatically adds `import ns.mesh`
+  - Configures IEEE 802.11s WiFi standard
+  
+- **Researcher Agent** - Updated knowledge base
+  - Includes HWMP in protocol recommendations
+  - Distinguishes between MANET and Mesh protocols
+  - Provides mesh-specific configuration guidance
+
+#### Documentation
+- **README.md** - Updated supported protocols list
+  - Now includes: AODV, OLSR, DSDV, DSR, HWMP (IEEE 802.11s mesh), and custom
+
+---
+
 ## [1.5.0] - 2025-11-25
 
 ### 🎉 Major Release - Complete Research Automation System
@@ -379,4 +452,4 @@ If you use A2A in your research, please cite:
 
 ---
 
-**Last Updated**: 2025-11-25
+**Last Updated**: 2025-11-26
