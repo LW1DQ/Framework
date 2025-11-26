@@ -436,7 +436,6 @@ experiences = memory.retrieve_experience(
 - [Architecture Guide](ARCHITECTURE.md)
 - [Developer Guide](DEVELOPER_GUIDE.md)
 - [Quick Start](QUICK-START.md)
-- [Complete Thesis Guide](../TESIS-DOCTORAL-GUIA-COMPLETA.md)
 
 ---
 

@@ -1,74 +1,74 @@
-# Guía de Contribución al Sistema A2A
+# Contributing to A2A Framework
 
-¡Gracias por tu interés en contribuir al Sistema A2A! Este documento establece las pautas para contribuir al proyecto.
+Thank you for your interest in contributing to the A2A Framework! This document establishes the guidelines for contributing to the project.
 
-## 🤝 Cómo Contribuir
+## 🤝 How to Contribute
 
-### Reportar Bugs
-Si encuentras un error, por favor abre un Issue en GitHub incluyendo:
-- Pasos para reproducir el error.
-- Comportamiento esperado vs real.
-- Logs o capturas de pantalla relevantes.
-- Entorno (OS, versión de Python, versión de NS-3).
+### Reporting Bugs
+If you find a bug, please open an Issue on GitHub including:
+- Steps to reproduce the error.
+- Expected vs actual behavior.
+- Relevant logs or screenshots.
+- Environment (OS, Python version, NS-3 version).
 
-### Sugerir Mejoras
-Abre un Issue con la etiqueta `enhancement` describiendo tu idea y por qué sería útil.
+### Suggesting Improvements
+Open an Issue with the `enhancement` label describing your idea and why it would be useful.
 
 ### Pull Requests
-1.  **Fork** el repositorio.
-2.  Crea una rama para tu feature: `git checkout -b feature/mi-nueva-feature`.
-3.  Implementa tus cambios siguiendo los estándares de código.
-4.  Asegúrate de que los tests pasen: `python -m unittest discover tests`.
-5.  Haz commit de tus cambios: `git commit -m 'feat: descripción breve'`.
-6.  Haz push a tu rama: `git push origin feature/mi-nueva-feature`.
-7.  Abre un Pull Request describiendo tus cambios.
+1.  **Fork** the repository.
+2.  Create a branch for your feature: `git checkout -b feature/my-new-feature`.
+3.  Implement your changes following the code standards.
+4.  Ensure tests pass: `pytest tests/`.
+5.  Commit your changes: `git commit -m 'feat: brief description'`.
+6.  Push to your branch: `git push origin feature/my-new-feature`.
+7.  Open a Pull Request describing your changes.
 
 ---
 
-## 💻 Estándares de Desarrollo
+## 💻 Development Standards
 
-### Estilo de Código
-- Seguimos **PEP 8** para Python.
-- Usamos **Type Hints** en todas las funciones nuevas.
-- Documentamos clases y funciones con **Docstrings** (formato Google).
+### Code Style
+- We follow **PEP 8** for Python.
+- We use **Type Hints** in all new functions.
+- We document classes and functions with **Docstrings** (Google format).
 
 ```python
-def mi_funcion(param: int) -> str:
+def my_function(param: int) -> str:
     """
-    Descripción breve.
+    Brief description.
 
     Args:
-        param: Descripción del parámetro.
+        param: Description of the parameter.
 
     Returns:
-        Descripción del retorno.
+        Description of the return value.
     """
     pass
 ```
 
-### Estructura del Proyecto
-- `agents/`: Lógica de los agentes (LangGraph nodes).
-- `config/`: Configuraciones globales.
-- `utils/`: Utilidades compartidas (logging, errores, estado).
-- `simulations/`: Directorio de trabajo para scripts y resultados.
-- `tests/`: Tests unitarios e integración.
+### Project Structure
+- `agents/`: Agent logic (LangGraph nodes).
+- `config/`: Global configurations.
+- `utils/`: Shared utilities (logging, errors, state).
+- `simulations/`: Working directory for scripts and results.
+- `tests/`: Unit and integration tests.
 
 ### Tests
-Todo código nuevo debe incluir tests unitarios.
-- Usamos `unittest`.
-- Mocks para dependencias externas (NS-3, Ollama).
-- Ejecutar tests antes de PR: `python -m unittest discover tests`.
+All new code must include unit tests.
+- We use `pytest`.
+- Mocks for external dependencies (NS-3, Ollama).
+- Run tests before PR: `pytest tests/`.
 
 ---
 
-## 🏗️ Arquitectura
+## 🏗️ Architecture
 
-El sistema utiliza una arquitectura de **Agentes Cognitivos** orquestados por **LangGraph**.
-- **Estado Compartido (`AgentState`)**: Diccionario que pasa entre nodos.
-- **Nodos**: Funciones puras que reciben estado y devuelven actualizaciones.
-- **Memoria**: SQLite para persistencia de checkpoints.
+The system uses a **Cognitive Agents** architecture orchestrated by **LangGraph**.
+- **Shared State (`AgentState`)**: Dictionary passed between nodes.
+- **Nodes**: Pure functions that receive state and return updates.
+- **Memory**: SQLite for checkpoint persistence.
 
 ---
 
-## 📜 Licencia
-Al contribuir, aceptas que tu código se licencie bajo la licencia MIT del proyecto.
+## 📜 License
+By contributing, you agree that your code will be licensed under the MIT license of the project.

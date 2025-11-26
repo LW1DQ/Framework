@@ -32,23 +32,17 @@ By the end of this guide, you will:
 git clone https://github.com/LW1DQ/Framework.git
 cd Framework
 
-# Create virtual environment
-python3 -m venv venv
+# Run automated installer
+chmod +x install.sh
+./install.sh
+
+# Activate virtual environment
 source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Install Ollama (for local LLM)
-curl -fsSL https://ollama.com/install.sh | sh
-ollama pull llama3.1:8b
 ```
 
 ---
 
-## ✅ Step 2: Verify Installation (1 minute)
-
-```bash
+## ✅ Step 2: Verify Installation (1 minute)```bash
 python verify-system-complete.py
 ```
 

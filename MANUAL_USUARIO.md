@@ -55,16 +55,16 @@ A2A (Agent-to-Agent) is a system that **automates research tasks** for network p
 
 ### Step 1: Installation
 
-Follow the [Installation Guide](INSTALL.md). Don't worry, it's step-by-step!
+Follow the [Installation Guide](INSTALL.md). The easiest way is using our automated script:
 
 **Summary**:
 ```bash
 # Open terminal and run these commands one by one:
 git clone https://github.com/LW1DQ/Framework.git
 cd Framework
-python3 -m venv venv
+chmod +x install.sh
+./install.sh
 source venv/bin/activate
-pip install -r requirements.txt
 ```
 
 ### Step 2: Verify Installation
