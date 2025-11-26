@@ -36,25 +36,21 @@ Complete installation instructions for Ubuntu/Linux systems.
 
 ## ⚡ Quick Installation
 
-For experienced users who want to get started quickly:
+For experienced users who want to get started quickly, we provide an automated script that installs everything (System dependencies, Python venv, Ollama, NS-3 3.45, and 5G-LENA):
 
 ```bash
-# 1. Install system dependencies
-sudo apt update && sudo apt install -y python3.10 python3-pip python3-venv git
-
-# 2. Clone repository
+# 1. Clone repository
 git clone https://github.com/LW1DQ/Framework.git
 cd Framework
 
-# 3. Create virtual environment
-python3 -m venv venv
+# 2. Run automated installer
+chmod +x install.sh
+./install.sh
+
+# 3. Activate virtual environment
 source venv/bin/activate
 
-# 4. Install Python dependencies
-pip install --upgrade pip
-pip install -r requirements.txt
-
-# 5. Verify installation
+# 4. Verify installation
 python verify-system-complete.py
 ```
 
