@@ -61,8 +61,15 @@
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- **[NS-3 Integration](ns3-integration/INSTALL-NS3-AI.md)** - Deep Reinforcement Learning with NS-3
+### Installation
+
+```bash
+git clone https://github.com/LW1DQ/Framework.git
+cd Framework
+./install.sh
+```
+
+For detailed instructions, see [INSTALL.md](INSTALL.md).
 
 ### Troubleshooting
 - **[Common Issues](docs/TROUBLESHOOTING.md)** - Solutions to frequent problems
@@ -226,7 +233,7 @@ chapter = generate_thesis_section_enhanced(results, state)
 - **Python 3.10+**: Main language
 - **LangGraph**: Agent orchestration
 - **LangChain**: LLM integration
-- **Ollama**: Local LLM execution
+- **Ollama**: Local LLM execution (Default: `llama3.1:8b`)
 
 ### Simulation
 - **NS-3 3.36+**: Network simulator

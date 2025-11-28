@@ -15,6 +15,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 
 from utils.state import AgentState
 from utils.logging_utils import update_agent_status, log_message
+from utils.errors import A2AError
 from agents import (
     research_node,
     coder_node,
@@ -321,6 +322,13 @@ class SupervisorOrchestrator:
             print("\n" + "="*80)
             
             return final_state.values
+            
+        except A2AError as e:
+            print(f"\n❌ ERROR A2A CONOCIDO: {str(e)}")
+            log_message("Supervisor", f"Error A2A: {e}", level="ERROR")
+            set_system_status("failed", task=task)
+            update_agent_status("Supervisor", "failed", f"Error A2A: {str(e)[:50]}")
+            return None
             
         except Exception as e:
             print(f"\n❌ ERROR EN EXPERIMENTO: {str(e)}")

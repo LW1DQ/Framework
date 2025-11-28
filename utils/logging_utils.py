@@ -251,5 +251,22 @@ def get_system_state() -> Dict[str, Any]:
     return _system_state.copy()
 
 
+# --- Alias functions for compatibility ---
+
+def log_info(agent_name: str, message: str):
+    """Alias for log_message with level INFO"""
+    log_message(agent_name, message, "INFO")
+
+
+def log_warning(agent_name: str, message: str):
+    """Alias for log_message with level WARNING"""
+    log_message(agent_name, message, "WARNING")
+
+
+def log_error(agent_name: str, message: str):
+    """Alias for log_message with level ERROR"""
+    log_message(agent_name, message, "ERROR")
+
+
 # Inicializar al importar
 init_logging()

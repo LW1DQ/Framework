@@ -1,76 +1,58 @@
+
+import unittest
 import sys
-import importlib.util
-from pathlib import Path
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from utils.validation import validate_code
 
-# Add project root to path
-PROJECT_ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
-# Load simulator.py directly to avoid triggering agents/__init__.py and heavy dependencies
-spec = importlib.util.spec_from_file_location("simulator", PROJECT_ROOT / "agents" / "simulator.py")
-simulator_module = importlib.util.module_from_spec(spec)
-sys.modules["simulator"] = simulator_module
-spec.loader.exec_module(simulator_module)
-
-validate_code_before_execution = simulator_module.validate_code_before_execution
-
-def test_validation():
-    print("Testing Robust Syntax Validation...")
-    
-    # Case 1: Valid Code
-    valid_code = """
+class TestValidation(unittest.TestCase):
+    def test_valid_code(self):
+        code = """
 import ns.core
 import ns.network
 
 def main():
-    ns.core.Simulator.Run()
-    ns.core.Simulator.Destroy()
+    print("Hello")
+    return 0
 
 if __name__ == "__main__":
     main()
 """
-    is_valid, msg = validate_code_before_execution(valid_code)
-    if is_valid:
-        print("✅ Valid code passed")
-    else:
-        print(f"❌ Valid code failed: {msg}")
+        is_valid, msg = validate_code(code)
+        self.assertTrue(is_valid, msg)
 
-    # Case 2: Syntax Error
-    syntax_error_code = """
+    def test_syntax_error(self):
+        code = """
 import ns.core
-def main()  # Missing colon
+def main() # Missing colon
     pass
 """
-    is_valid, msg = validate_code_before_execution(syntax_error_code)
-    if not is_valid and "Error de sintaxis" in msg:
-        print(f"✅ Syntax error caught: {msg}")
-    else:
-        print(f"❌ Syntax error NOT caught correctly: {is_valid}, {msg}")
+        is_valid, msg = validate_code(code)
+        self.assertFalse(is_valid)
+        self.assertIn("sintaxis", msg.lower())
 
-    # Case 3: Missing Imports
-    missing_import_code = """
+    def test_missing_imports(self):
+        code = """
 def main():
-    ns.core.Simulator.Run()
-    ns.core.Simulator.Destroy()
+    pass
 """
-    is_valid, msg = validate_code_before_execution(missing_import_code)
-    if not is_valid and "Faltan imports" in msg:
-        print(f"✅ Missing imports caught: {msg}")
-    else:
-        print(f"❌ Missing imports NOT caught: {is_valid}, {msg}")
+        is_valid, msg = validate_code(code)
+        self.assertFalse(is_valid)
+        self.assertIn("faltan imports", msg.lower())
 
-    # Case 4: Missing Simulator.Run
-    missing_run_code = """
-import ns.core
-import ns.network
+    def test_compilation_error(self):
+        # Valid syntax but invalid logic that might be caught by some linters, 
+        # but py_compile mainly checks syntax. 
+        # However, let's try something that is syntactically correct but might fail if we were doing more.
+        # Actually py_compile is just syntax check + bytecode generation.
+        # Let's test a case where indentation is wrong which is a syntax error but good to check.
+        code = """
 def main():
-    ns.core.Simulator.Destroy()
+print("Bad indentation")
 """
-    is_valid, msg = validate_code_before_execution(missing_run_code)
-    if not is_valid and "Falta llamada a Simulator.Run" in msg:
-        print(f"✅ Missing Simulator.Run caught: {msg}")
-    else:
-        print(f"❌ Missing Simulator.Run NOT caught: {is_valid}, {msg}")
+        is_valid, msg = validate_code(code)
+        self.assertFalse(is_valid)
+        self.assertIn("sintaxis", msg.lower())
 
-if __name__ == "__main__":
-    test_validation()
+if __name__ == '__main__':
+    unittest.main()

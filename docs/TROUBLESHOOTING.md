@@ -83,7 +83,9 @@ ollama list
 
 # 4. Si faltan modelos, descargarlos
 ollama pull llama3.1:8b
-ollama pull deepseek-coder-v2:16b
+# 4. Si faltan modelos, descargarlos
+ollama pull llama3.1:8b
+# deepseek-coder-v2:16b ya no es el default por consumo de recursos
 ```
 
 **Verificación:**
@@ -163,6 +165,35 @@ python main.py
 
 # 4. Si persiste, limpiar memoria episódica
 python -c "from utils.memory import memory; memory.clear()"
+
+---
+
+### Error: "Validation Failed"
+
+**Síntoma:**
+```
+❌ Validación falló: Error de sintaxis en línea 10
+```
+
+**Solución:**
+El sistema ahora valida el código antes de ejecutarlo.
+1. **Revisar el error específico**: El mensaje indica la línea exacta.
+2. **Verificar imports**: Asegurar que `ns.core`, `ns.network` estén presentes.
+3. **Verificar estructura**: Debe existir `def main()` o `if __name__ == "__main__"`.
+
+---
+
+### Error: "CodeGenerationError"
+
+**Síntoma:**
+```
+CodeGenerationError: Error en generación LLM
+```
+
+**Solución:**
+1. **Verificar Ollama**: Asegurar que el modelo `llama3.1:8b` esté cargado.
+2. **Recursos**: Verificar RAM disponible.
+3. **Logs**: Revisar `logs/sistema_a2a.log` para el traceback completo.
 ```
 
 ---
@@ -256,7 +287,7 @@ Error: model 'llama3.1:8b' not found
 
 **Solución:**
 ```bash
-# Descargar modelo
+# Descargar modelo (Default actual)
 ollama pull llama3.1:8b
 
 # Verificar

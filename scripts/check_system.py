@@ -97,11 +97,12 @@ def check_ns3_python_bindings():
     """Verifica que los Python bindings de NS-3 funcionen"""
     try:
         from config.settings import NS3_ROOT
-        sys.path.insert(0, str(NS3_ROOT / "build" / "lib" / "python3"))
+        sys.path.insert(0, str(NS3_ROOT / "build" / "bindings" / "python"))
         
-        import ns.core
-        version = ns.core.Version()
-        return True, f"Python bindings OK (NS-3 {version})"
+        from ns import ns
+        if hasattr(ns, 'Simulator'):
+            return True, "Python bindings OK (NS-3)"
+        return False, "Bindings loaded but Simulator not found"
     except Exception as e:
         return False, f"Python bindings fallan: {str(e)[:50]}"
 

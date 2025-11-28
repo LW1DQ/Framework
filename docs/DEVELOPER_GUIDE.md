@@ -61,7 +61,7 @@ Each agent is a specialized module that performs a specific task:
 Orchestrates agent execution using LangGraph:
 - Defines workflow graph
 - Manages state transitions
-- Handles errors and retries
+- Handles errors and retries (using `A2AException`)
 - Provides checkpointing
 
 #### 3. Utilities (`utils/`)
@@ -169,6 +169,7 @@ Framework/
 │   ├── __init__.py
 │   ├── memory.py          # Episodic memory
 │   ├── errors.py          # Custom exceptions
+│   ├── validation.py      # Code validation (AST, compilation)
 │   ├── logging_utils.py   # Logging system
 │   ├── state.py           # State management
 │   └── statistical_tests.py  # Statistical analysis
@@ -229,6 +230,26 @@ main.py
       └── config/
           └── settings.py
 ```
+
+---
+
+## 🛡️ Robustness Features
+
+### Code Validation (`utils/validation.py`)
+The framework includes a robust validation system for generated code:
+1. **Syntax Check**: Uses `ast.parse` to catch syntax errors.
+2. **Compilation Check**: Uses `python -m py_compile` to verify bytecode generation.
+3. **Import Verification**: Checks for required NS-3 modules.
+
+### Error Handling (`utils/errors.py`)
+Structured exception hierarchy for precise error control:
+- `A2AException`: Base class.
+- `SimulationError`: NS-3 runtime failures.
+- `CodeGenerationError`: LLM generation failures.
+- `TimeoutError`: Simulation timeouts.
+- `CompilationError`: Syntax/Import errors.
+
+See [ERROR_HANDLING.md](ERROR_HANDLING.md) for details.
 
 ---
 

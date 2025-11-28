@@ -55,6 +55,11 @@ class OptimizationError(AgentError):
     pass
 
 
+class DocumentGenerationError(AgentError):
+    """Error generando documentos científicos"""
+    pass
+
+
 class ValidationError(A2AError):
     """Error de validación de datos o código"""
     pass
@@ -78,6 +83,7 @@ ERROR_TYPE_MAP = {
     'AnalysisError': AnalysisError,
     'OptimizationError': OptimizationError,
     'ValidationError': ValidationError,
+    'DocumentGenerationError': DocumentGenerationError,
     'A2AError': A2AError
 }
 

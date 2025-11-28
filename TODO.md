@@ -1,9 +1,9 @@
-# 📋 TODO - Sistema A2A v1.4
+# 📋 TODO - Sistema A2A v1.5.3
 
 ## Tareas Pendientes y Mejoras Identificadas
 
-**Fecha de análisis:** 25 de Noviembre de 2025  
-**Versión actual:** 1.4  
+**Fecha de análisis:** 28 de Noviembre de 2025  
+**Versión actual:** 1.5.3  
 ## 🔴 PRIORIDAD ALTA (Crítico)
 
 ### 1. Conectar Dashboard al Flujo Principal (COMPLETADO)
@@ -98,39 +98,10 @@ def validate_code_before_execution(code: str) -> tuple[bool, str]:
         return False, "Falta función main()"
 ```
 
-**Solución:**
-```python
-import ast
-import subprocess
+**Estado:** ✅ Completado en v1.4 (Nov 2025)
 
-def validate_code_before_execution(code: str) -> tuple[bool, str]:
-    # 1. Validación sintáctica con AST
-    try:
-        ast.parse(code)
-    except SyntaxError as e:
-        return False, f"Error de sintaxis en línea {e.lineno}: {e.msg}"
-    
-    # 2. Validación de imports (opcional)
-    try:
-        result = subprocess.run(
-            ['python', '-m', 'py_compile', '-'],
-            input=code.encode(),
-            capture_output=True,
-            timeout=5
-        )
-        if result.returncode != 0:
-            return False, f"Error de compilación: {result.stderr.decode()}"
-    except subprocess.TimeoutExpired:
-        return False, "Timeout en validación"
-    
-    # 3. Verificaciones específicas de NS-3
-    required_imports = ['ns.core', 'ns.network']
-    missing = [imp for imp in required_imports if imp not in code]
-    if missing:
-        return False, f"Faltan imports críticos: {', '.join(missing)}"
-    
-    return True, "Código válido"
-```
+**Solución Implementada:**
+Se creó `utils/validation.py` con validación AST y compilación. Se integró en `coder.py` y `simulator.py`.
 
 **Estimación:** 2-3 horas  
 **Impacto:** Alto - Previene errores de ejecución
@@ -234,6 +205,11 @@ def simulator_node(state):
         logger.error(f"Error inesperado: {e}", exc_info=True)
         raise SimulationError(f"Error inesperado: {e}")
 ```
+
+**Estado:** ✅ Completado en v1.5 (Nov 2025)
+
+**Solución Implementada:**
+Se creó `utils/errors.py` con jerarquía de excepciones (`A2AException`, `SimulationError`, etc.) y se actualizaron los agentes para usarlas.
 
 **Estimación:** 3-4 horas  
 **Impacto:** Medio - Mejora debugging y mantenimiento

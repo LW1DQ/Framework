@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.3] - 2025-11-28
+
+### Fixed
+- **Coder Agent Hang** - Resolved hang during code generation by switching default model to `llama3.1:8b`.
+- **Validation** - Implemented robust code validation using AST and compilation checks in `utils/validation.py`.
+- **Error Handling** - Implemented structured exception hierarchy in `utils/errors.py` and updated agents to use it.
+
+### Improved
+- **Coder Agent** - Added detailed logging and fallback mechanisms.
+- **Simulator Agent** - Enhanced error reporting with specific exception types (`SimulationError`, `TimeoutError`, `CompilationError`).
+
+---
+
 ## [1.5.2] - 2025-11-26
 
 ### Documentation

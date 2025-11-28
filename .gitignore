@@ -90,6 +90,8 @@ misc/
 *.zip
 *.tar.gz
 *.rar
+*.docx
+.~lock*
 
 # Excepciones (archivos que SÍ queremos subir)
 !simulations/results/.gitkeep

@@ -15,7 +15,7 @@ PROJECT_ROOT = Path(__file__).parent.parent
 
 # Ruta a NS-3 (AJUSTAR SEGÚN TU INSTALACIÓN)
 # Ejemplo: /home/usuario/tesis-a2a/ns-allinone-3.43/ns-3.43
-NS3_ROOT = Path.home() / "tesis-a2a" / "ns-allinone-3.43" / "ns-3.43"
+NS3_ROOT = Path.home() / "ns-3.45"
 
 # Directorios del proyecto
 SIMULATIONS_DIR = PROJECT_ROOT / "simulations"
@@ -32,7 +32,7 @@ OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
 # Modelos a utilizar
 MODEL_REASONING = os.getenv("MODEL_REASONING", "llama3.1:8b")
-MODEL_CODING = os.getenv("MODEL_CODING", "deepseek-coder-v2:16b")
+MODEL_CODING = os.getenv("MODEL_CODING", "llama3.1:8b")
 MODEL_EMBEDDING = os.getenv("MODEL_EMBEDDING", "nomic-embed-text")
 
 # Parámetros de los modelos

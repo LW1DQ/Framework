@@ -19,47 +19,10 @@ import time
 from config.settings import NS3_ROOT, SIMULATION_TIMEOUT, SIMULATIONS_DIR
 from utils.state import AgentState, add_audit_entry
 from utils.logging_utils import update_agent_status, log_message, log_metric
+from utils.validation import validate_code
 
 
-def validate_code_before_execution(code: str) -> tuple[bool, str]:
-    """
-    Valida el código antes de ejecutarlo usando AST y compilación
-    
-    Args:
-        code: Código a validar
-        
-    Returns:
-        (es_válido, mensaje)
-    """
-    import ast
-    
-    # 1. Validación sintáctica con AST
-    try:
-        ast.parse(code)
-    except SyntaxError as e:
-        return False, f"Error de sintaxis en línea {e.lineno}: {e.msg}"
-    except Exception as e:
-        return False, f"Error al analizar código: {str(e)}"
 
-    # 2. Validación de imports críticos
-    required_imports = ['ns.core', 'ns.network']
-    missing = [imp for imp in required_imports if imp not in code]
-    
-    if missing:
-        return False, f"Faltan imports críticos: {', '.join(missing)}"
-    
-    # 3. Verificar estructura básica
-    if 'def main()' not in code and 'if __name__' not in code:
-        return False, "Falta función main() o bloque if __name__"
-    
-    # 4. Verificar llamadas esenciales de NS-3
-    if 'Simulator.Run()' not in code:
-        return False, "Falta llamada a Simulator.Run()"
-    
-    if 'Simulator.Destroy()' not in code:
-        return False, "Falta llamada a Simulator.Destroy()"
-    
-    return True, "Código válido para ejecución"
 
 
 def extract_simulation_info(stdout: str) -> Dict:
@@ -107,6 +70,66 @@ def extract_simulation_info(stdout: str) -> Dict:
 
 from utils.errors import SimulationError, TimeoutError, CompilationError, A2AError
 
+def run_ns3_simulation(scratch_file: Path, timeout: int) -> Dict:
+    """
+    Ejecuta la simulación NS-3 y maneja errores a bajo nivel
+    
+    Args:
+        scratch_file: Ruta al script en scratch
+        timeout: Tiempo máximo de ejecución
+        
+    Returns:
+        Diccionario con resultados de ejecución (stdout, returncode, etc.)
+    
+    Raises:
+        TimeoutError: Si excede el tiempo
+        CompilationError: Si hay error de sintaxis/imports
+        SimulationError: Si falla la simulación (runtime)
+    """
+    import sys
+    start_time = datetime.datetime.now()
+    
+    try:
+        # Usamos sys.executable para asegurar que usamos el mismo intérprete Python
+        cmd = [sys.executable, str(scratch_file)]
+        
+        result = subprocess.run(
+            cmd,
+            cwd=str(NS3_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=timeout
+        )
+        
+        execution_time = (datetime.datetime.now() - start_time).total_seconds()
+        
+        if result.returncode != 0:
+            error_msg = result.stderr if result.stderr else result.stdout
+            
+            # Identificar tipo de error
+            if "ImportError" in error_msg or "ModuleNotFoundError" in error_msg:
+                raise CompilationError(f"Error de importación: {error_msg}")
+            elif "SyntaxError" in error_msg:
+                raise CompilationError(f"Error de sintaxis: {error_msg}")
+            else:
+                raise SimulationError(f"Error de ejecución (código {result.returncode}): {error_msg}")
+                
+        return {
+            'stdout': result.stdout,
+            'stderr': result.stderr,
+            'returncode': result.returncode,
+            'execution_time': execution_time
+        }
+        
+    except subprocess.TimeoutExpired:
+        raise TimeoutError(f"Simulación excedió {timeout} segundos")
+    except Exception as e:
+        # Re-raise custom exceptions
+        if isinstance(e, (TimeoutError, CompilationError, SimulationError)):
+            raise
+        raise SimulationError(f"Error inesperado al ejecutar simulación: {e}")
+
+
 def simulator_node(state: AgentState) -> Dict:
     """
     Nodo del agente simulador para LangGraph con validación y retry mejorados
@@ -144,7 +167,7 @@ def simulator_node(state: AgentState) -> Dict:
     
     # Validación pre-ejecución
     print("🔍 Validando código antes de ejecutar...")
-    is_valid, validation_msg = validate_code_before_execution(code)
+    is_valid, validation_msg = validate_code(code)
     
     if not is_valid:
         print(f"  ❌ Validación falló: {validation_msg}")
@@ -187,53 +210,15 @@ def simulator_node(state: AgentState) -> Dict:
         print(f"  📊 Monitoreando progreso...")
         log_message("Simulator", f"Ejecutando script: {scratch_file.name}")
         
-        start_time = datetime.datetime.now()
+        # --- LLAMADA A FUNCIÓN EXTRACTADA ---
+        result_data = run_ns3_simulation(scratch_file, SIMULATION_TIMEOUT)
+        # ------------------------------------
         
-        # Usamos sys.executable para asegurar que usamos el mismo intérprete Python
-        cmd = [sys.executable, str(scratch_file)]
-        
-        result = subprocess.run(
-            cmd,
-            cwd=str(NS3_ROOT),
-            capture_output=True,
-            text=True,
-            timeout=SIMULATION_TIMEOUT
-        )
-        
-        end_time = datetime.datetime.now()
-        execution_time = (end_time - start_time).total_seconds()
-        
+        execution_time = result_data['execution_time']
         print(f"  ⏱️  Tiempo de ejecución: {execution_time:.2f}s")
         
         # Extraer información del stdout
-        sim_info = extract_simulation_info(result.stdout)
-        
-        # Verificar resultado
-        if result.returncode != 0:
-            error_msg = result.stderr if result.stderr else result.stdout
-            print(f"\n  ❌ Simulación falló (código: {result.returncode})")
-            
-            # Identificar tipo de error
-            error_type = "SimulationError"
-            if "ImportError" in error_msg or "ModuleNotFoundError" in error_msg:
-                error_type = "CompilationError" # Import error counts as compilation/setup
-            elif "SyntaxError" in error_msg:
-                error_type = "CompilationError"
-            
-            log_message("Simulator", f"Simulación falló: {error_type}", level="ERROR")
-            
-            return {
-                'simulation_status': 'failed',
-                'errors': [f"NS-3 Error ({error_type}): {error_msg[:500]}"],
-                'error_type': error_type,
-                'simulation_info': sim_info,
-                **add_audit_entry(state, "simulator", "simulation_failed", {
-                    'return_code': result.returncode,
-                    'error': error_msg[:500],
-                    'error_type': error_type,
-                    'execution_time': execution_time
-                })
-            }
+        sim_info = extract_simulation_info(result_data['stdout'])
         
         # Mostrar warnings si existen
         if sim_info['warnings']:
@@ -275,7 +260,7 @@ def simulator_node(state: AgentState) -> Dict:
         # Guardar stdout
         stdout_file = results_dir / f"sim_{timestamp}_stdout.txt"
         with open(stdout_file, 'w', encoding='utf-8') as f:
-            f.write(result.stdout)
+            f.write(result_data['stdout'])
         
         print(f"  ✅ Simulación completada exitosamente")
         print(f"  📁 Resultados en: {results_dir}")
@@ -297,17 +282,34 @@ def simulator_node(state: AgentState) -> Dict:
             })
         }
         
-    except subprocess.TimeoutExpired:
-        print(f"\n  ❌ Timeout: Simulación excedió {SIMULATION_TIMEOUT}s")
-        log_message("Simulator", f"Timeout: Simulación excedió {SIMULATION_TIMEOUT}s", level="ERROR")
-        
+    except TimeoutError as e:
+        print(f"\n  ❌ Timeout: {e}")
+        log_message("Simulator", f"Timeout: {e}", level="ERROR")
         return {
             'simulation_status': 'failed',
-            'errors': [f'Timeout: Simulación excedió {SIMULATION_TIMEOUT} segundos.'],
+            'errors': [str(e)],
             'error_type': 'TimeoutError',
-            **add_audit_entry(state, "simulator", "timeout", {
-                'timeout': SIMULATION_TIMEOUT
-            })
+            **add_audit_entry(state, "simulator", "timeout", {'error': str(e)})
+        }
+        
+    except CompilationError as e:
+        print(f"\n  ❌ Error de compilación/setup: {e}")
+        log_message("Simulator", f"Error de compilación: {e}", level="ERROR")
+        return {
+            'simulation_status': 'failed',
+            'errors': [str(e)],
+            'error_type': 'CompilationError',
+            **add_audit_entry(state, "simulator", "compilation_error", {'error': str(e)})
+        }
+        
+    except SimulationError as e:
+        print(f"\n  ❌ Error de simulación: {e}")
+        log_message("Simulator", f"Error de simulación: {e}", level="ERROR")
+        return {
+            'simulation_status': 'failed',
+            'errors': [str(e)],
+            'error_type': 'SimulationError',
+            **add_audit_entry(state, "simulator", "simulation_error", {'error': str(e)})
         }
         
     except Exception as e:
@@ -318,9 +320,9 @@ def simulator_node(state: AgentState) -> Dict:
         
         return {
             'simulation_status': 'failed',
-            'errors': [f'Error de ejecución: {str(e)}'],
+            'errors': [f'Error de sistema: {str(e)}'],
             'error_type': 'A2AError',
-            **add_audit_entry(state, "simulator", "execution_error", {
+            **add_audit_entry(state, "simulator", "system_error", {
                 'error': str(e)
             })
         }

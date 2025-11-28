@@ -33,7 +33,21 @@ Debe mostrar versión 3.36 o superior.
 
 ---
 
-## 📦 Instalación Paso a Paso
+## 📦 Instalación Automática (Recomendada)
+
+Se recomienda utilizar el script de instalación completa que incluye `ns3-ai` automáticamente:
+
+```bash
+./install_complete.sh
+```
+
+Este script se encargará de:
+1. Instalar dependencias
+2. Descargar y compilar NS-3
+3. Instalar y configurar `ns3-ai`
+4. Verificar la instalación
+
+Si prefieres la instalación manual, sigue los pasos a continuación.
 
 ### 1. Clonar ns3-ai
 

@@ -29,17 +29,28 @@ Complete installation instructions for Ubuntu/Linux systems.
 - **CPU**: 8+ cores
 - **RAM**: 16 GB
 
-# Clone ns3-ai
-git clone https://github.com/hust-diangroup/ns3-ai.git
+### One-Click Installation (Recommended)
 
-# Build with ns3-ai
-cd ../
-./ns3 configure --enable-examples
-./ns3 build
+The easiest way to install the A2A Framework is using the automated script:
 
-# Verify ns3-ai installation
-python3 -c "import ns3ai; print('ns3-ai installed successfully')"
+```bash
+# 1. Clone the repository
+git clone https://github.com/LW1DQ/Framework.git
+cd Framework
+
+# 2. Run the installer
+./install.sh
 ```
+
+This script will automatically:
+- Install system dependencies
+- Set up Python 3.10+ and virtual environment
+- Install and configure NS-3 with 5G-LENA and ns3-ai
+- Install and configure Ollama
+- Verify the installation
+
+### Manual Installation
+If you prefer to install manually, follow the [Detailed Installation](#detailed-installation) section below.
 
 **Detailed NS-3 installation guide**: See [ns3-integration/INSTALL-NS3-AI.md](ns3-integration/INSTALL-NS3-AI.md)
 

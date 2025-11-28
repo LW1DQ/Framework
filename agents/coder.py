@@ -21,6 +21,8 @@ from config.settings import (
 )
 from utils.state import AgentState, add_audit_entry, increment_iteration
 from utils.logging_utils import update_agent_status, log_message
+from utils.validation import validate_code
+from utils.errors import CodeGenerationError
 
 
 # Template base para scripts NS-3
@@ -101,26 +103,7 @@ def extract_code_from_response(response: str) -> str:
     return response.strip()
 
 
-def validate_code(code: str) -> tuple[bool, str]:
-    """
-    Valida que el código tenga los elementos necesarios
-    
-    Args:
-        code: Código a validar
-        
-    Returns:
-        (es_válido, mensaje)
-    """
-    required_imports = ['ns.core', 'ns.network']
-    missing_imports = [imp for imp in required_imports if imp not in code]
-    
-    if missing_imports:
-        return False, f"Faltan imports: {', '.join(missing_imports)}"
-    
-    if 'def main()' not in code and 'if __name__' not in code:
-        return False, "Falta función main() o bloque if __name__"
-    
-    return True, "Código válido"
+
 
 
 from utils.memory import memory
@@ -184,7 +167,9 @@ Responde con precisión:
         
         print("  📋 Planificando simulación (análisis profundo)...")
         log_message("Coder", "Planificando simulación con Chain-of-Thought...")
+        print(f"  DEBUG: Invoking LLM for CoT with model {MODEL_CODING}...")
         reasoning = llm.invoke(cot_prompt)
+        print(f"  DEBUG: LLM CoT response received. Length: {len(reasoning.content)}")
         print(f"  ✓ Planificación completada")
         
         # Paso 2: Generación de código con template mejorado
@@ -339,8 +324,12 @@ IMPORTANTE: Este es el intento #{iteration+1}. Sé más cuidadoso.
         
         print(f"  💻 Generando código (intento #{iteration+1})...")
         log_message("Coder", f"Generando código (Iteración {iteration+1})...")
+        print(f"  DEBUG: Invoking LLM for Code Generation with model {MODEL_CODING}...")
         response = llm.invoke(code_prompt)
+        print(f"  DEBUG: LLM Code Generation response received.")
+        print(f"  ✓ Respuesta LLM recibida. Longitud: {len(response.content)}")
         code = extract_code_from_response(response.content)
+        print(f"  ✓ Código extraído. Longitud: {len(code)}")
         
         # Post-procesamiento: asegurar imports básicos
         code = ensure_basic_imports(code)
@@ -353,7 +342,7 @@ IMPORTANTE: Este es el intento #{iteration+1}. Sé más cuidadoso.
     except Exception as e:
         print(f"  ❌ Error generando código: {e}")
         log_message("Coder", f"Error generando código: {e}", level="ERROR")
-        return generate_fallback_code(task)
+        raise CodeGenerationError(f"Error en generación LLM: {e}")
 
 
 def ensure_basic_imports(code: str) -> str:
@@ -549,7 +538,13 @@ def coder_node(state: AgentState) -> Dict:
     print()
     
     # Generar código con contexto de iteración
-    code = generate_code(task, research_notes, previous_error, error_type, iteration)
+    try:
+        code = generate_code(task, research_notes, previous_error, error_type, iteration)
+    except CodeGenerationError as e:
+        print(f"⚠️  Fallo en generación: {e}")
+        print("⚠️  Usando código de respaldo (fallback)...")
+        log_message("Coder", f"Fallo generación: {e}. Usando fallback.", level="WARNING")
+        code = generate_fallback_code(task)
     
     # Validar código
     is_valid, validation_msg = validate_code(code)
