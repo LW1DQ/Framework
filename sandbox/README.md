@@ -61,28 +61,11 @@
 
 ## 🚀 Quick Start
 
-### 🚀 Instalación Rápida (Recomendado)
-
-Si eres un investigador y deseas configurar un entorno completo (Sandbox) en tu máquina rápidamente, utiliza nuestro **Instalador Universal**:
+### Installation
 
 ```bash
-# Descargar y ejecutar el instalador
-wget https://raw.githubusercontent.com/LW1DQ/Framework/main/sandbox_install/install_a2a.sh
-chmod +x install_a2a.sh
-./install_a2a.sh
-```
-
-Esto creará una carpeta `~/A2A_Research_Sandbox` con todo lo necesario (NS-3, Agentes, Dependencias) listo para usar.
-
-## 📦 Instalación Manual (Desarrolladores)
-
-Si prefieres una instalación manual o vas a contribuir al desarrollo del core:
-
-1. Clonar el repositorio:
-   ```bash
-   git clone https://github.com/LW1DQ/Framework.git
-   cd Framework
-   ```
+git clone https://github.com/LW1DQ/Framework.git
+cd Framework
 ./install.sh
 ```
 
