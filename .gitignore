@@ -154,3 +154,6 @@ GITHUB-RELEASE-GUIDE.md
 RELEASE_NOTES_v1.5.1.md
 RESUMEN_REVISION_HWMP_v1.5.1.md
 VERIFICATION_CHECKLIST_v1.5.1.md
+
+# Sandbox Environment (Local only)
+sandbox/
