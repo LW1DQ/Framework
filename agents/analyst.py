@@ -489,6 +489,11 @@ def analyst_node(state: AgentState) -> Dict:
                 f'Overhead de enrutamiento: {routing_overhead*100:.1f}%',
                 f'Intervalos de confianza: {len(confidence_intervals)} métricas' if confidence_intervals else 'Sin intervalos de confianza'
             ],
+            'experiment_results': {
+                'experiment_name': state.get('task', 'Experiment'),
+                'metrics': kpis,
+                'statistical_analysis': statistical_results
+            },
             **increment_iteration(state),
             **add_audit_entry(state, "analyst", "analysis_completed", {
                 'kpis_count': len(kpis),

@@ -54,3 +54,6 @@ mkdocs-material==9.5.39
 # Dashboard
 streamlit==1.39.0
 watchdog==4.0.2
+
+# NS-3 Bindings Support
+cppyy>=3.0.0

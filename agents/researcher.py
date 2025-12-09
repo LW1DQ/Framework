@@ -344,6 +344,27 @@ def search_arxiv(query: str, max_results: int = 5) -> list:
         return []
 
 
+def generate_search_query(task: str) -> str:
+    """Genera una consulta de búsqueda concisa basada en la tarea"""
+    try:
+        llm = ChatOllama(model=MODEL_REASONING, base_url=OLLAMA_BASE_URL)
+        prompt = f"""
+        Genera una consulta de búsqueda académica (keywords en inglés) para la siguiente tarea de investigación.
+        La consulta debe ser corta (máximo 5-7 palabras) y enfocada en los temas principales.
+        Solo devuelve la consulta, nada más.
+        
+        Tarea: {task}
+        """
+        response = llm.invoke(prompt)
+        query = response.content.strip().replace('"', '')
+        if "Query:" in query:
+            query = query.split("Query:")[1].strip()
+        return query
+    except Exception as e:
+        print(f"⚠️ Error generando consulta: {e}")
+        return "routing protocols optimization ns-3"
+
+
 def research_node(state: AgentState) -> Dict:
     """
     Nodo del agente investigador para LangGraph
@@ -370,7 +391,9 @@ def research_node(state: AgentState) -> Dict:
     # 1. Buscar en Semantic Scholar
     print("🔎 Buscando en Semantic Scholar...")
     log_message("Researcher", "Consultando Semantic Scholar...")
-    query_ss = f"routing protocols optimization {task} ns-3 smart cities"
+    search_query = generate_search_query(task)
+    print(f"🔑 Keywords de búsqueda: {search_query}")
+    query_ss = search_query
     papers_ss = search_semantic_scholar(query_ss, SEMANTIC_SCHOLAR_MAX_RESULTS)
     
     if papers_ss:
@@ -381,7 +404,7 @@ def research_node(state: AgentState) -> Dict:
     # 2. Buscar en arXiv
     print("🔎 Buscando en arXiv...")
     log_message("Researcher", "Consultando arXiv...")
-    query_arxiv = f"routing protocols {task} machine learning"
+    query_arxiv = search_query
     papers_arxiv = search_arxiv(query_arxiv, max_results=5)
     
     if papers_arxiv:

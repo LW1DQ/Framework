@@ -33,7 +33,9 @@ Objetivo: {objective}
 """
 
 import sys
+import sys
 sys.path.insert(0, 'build/lib/python3')
+sys.path.insert(0, '/home/diego/ns3/build/bindings/python')  # CRITICAL: Path to NS-3 bindings
 
 import ns.core
 import ns.network
@@ -200,7 +202,9 @@ Eres un experto en NS-3 Python bindings. Genera un script COMPLETO, EJECUTABLE y
 ```python
 #!/usr/bin/env python3
 import sys
+import sys
 sys.path.insert(0, 'build/lib/python3')
+sys.path.insert(0, '/home/diego/ns3/build/bindings/python')
 
 # Imports de NS-3
 import ns.core
@@ -271,6 +275,61 @@ def main():
     print("📡 Captura PCAP habilitada: simulacion-X-Y.pcap")
     
     # 6. Ejecutar simulación
+    ns.core.Simulator.Run()
+    ns.core.Simulator.Destroy()
+```
+
+**EJEMPLO DE SCRIPT AODV CORRECTO (ÚSALO COMO REFERENCIA):**
+```python
+import ns.core
+import ns.network
+import ns.internet
+import ns.mobility
+import ns.aodv
+import ns.wifi
+import ns.applications
+
+def main():
+    # 1. Nodos
+    nodes = ns.network.NodeContainer()
+    nodes.Create(20)
+    
+    # 2. WiFi
+    wifi = ns.wifi.WifiHelper()
+    wifi.SetStandard(ns.wifi.WIFI_STANDARD_80211b)
+    wifi_phy = ns.wifi.YansWifiPhyHelper()
+    wifi_channel = ns.wifi.YansWifiChannelHelper.Default()
+    wifi_phy.SetChannel(wifi_channel)
+    wifi_mac = ns.wifi.WifiMacHelper()
+    wifi_mac.SetType("ns3::AdhocWifiMac")
+    devices = wifi.Install(wifi_phy, wifi_mac, nodes)
+    
+    # 3. Movilidad
+    mobility = ns.mobility.MobilityHelper()
+    mobility.SetPositionAllocator("ns3::RandomRectanglePositionAllocator",
+        "X", ns.core.StringValue("ns3::UniformRandomVariable[Min=0.0|Max=500.0]"),
+        "Y", ns.core.StringValue("ns3::UniformRandomVariable[Min=0.0|Max=500.0]"))
+    mobility.SetMobilityModel("ns3::RandomWaypointMobilityModel",
+        "Speed", ns.core.StringValue("ns3::UniformRandomVariable[Min=1.0|Max=20.0]"),
+        "Pause", ns.core.StringValue("ns3::ConstantRandomVariable[Constant=2.0]"))
+    mobility.Install(nodes)
+    
+    # 4. AODV Routing
+    aodv = ns.aodv.AodvHelper()  # CORRECTO: Usar helper
+    internet = ns.internet.InternetStackHelper()
+    internet.SetRoutingHelper(aodv)
+    internet.Install(nodes)
+    
+    # 5. IPs
+    ipv4 = ns.internet.Ipv4AddressHelper()
+    ipv4.SetBase("10.1.1.0", "255.255.255.0")
+    ipv4.Assign(devices)
+    
+    # 6. Aplicaciones
+    # ... (UdpEchoClient/Server)
+    
+    # 7. Ejecutar
+    ns.core.Simulator.Stop(ns.core.Seconds(100.0))
     ns.core.Simulator.Run()
     ns.core.Simulator.Destroy()
 ```

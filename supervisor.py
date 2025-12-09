@@ -125,8 +125,11 @@ class SupervisorOrchestrator:
         # Optimizador → Programador (ciclo de optimización)
         self.workflow.add_edge("optimizer", "coder")
         
-        # Visualización → GitHub Manager
-        self.workflow.add_edge("visualizer", "github_manager")
+        # Visualización → Escritor Científico
+        self.workflow.add_edge("visualizer", "scientific_writer")
+
+        # Escritor Científico → GitHub Manager
+        self.workflow.add_edge("scientific_writer", "github_manager")
         
         # GitHub Manager → Fin
         self.workflow.add_edge("github_manager", END)

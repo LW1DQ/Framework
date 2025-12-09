@@ -163,49 +163,6 @@ def test_analyze_bottlenecks_optimal():
 ### 5. Manejo de Errores Estructurado
 **Problema:** Uso excesivo de `except Exception as e` genérico
 
-**Archivos afectados:**
-- Múltiples archivos en `agents/`
-- `supervisor.py`
-- `main.py`
-
-**Solución:**
-```python
-# Crear utils/exceptions.py
-class A2AException(Exception):
-    """Excepción base del sistema A2A"""
-    pass
-
-class SimulationError(A2AException):
-    """Error durante la simulación NS-3"""
-    pass
-
-class CodeGenerationError(A2AException):
-    """Error generando código"""
-    pass
-
-class OptimizationError(A2AException):
-    """Error en optimización"""
-    pass
-
-# Usar en agentes
-import logging
-from utils.exceptions import SimulationError
-
-logger = logging.getLogger(__name__)
-
-def simulator_node(state):
-    try:
-        # código de simulación
-        pass
-    except subprocess.TimeoutExpired:
-        raise SimulationError("Simulación excedió timeout")
-    except FileNotFoundError as e:
-        raise SimulationError(f"Archivo no encontrado: {e}")
-    except Exception as e:
-        logger.error(f"Error inesperado: {e}", exc_info=True)
-        raise SimulationError(f"Error inesperado: {e}")
-```
-
 **Estado:** ✅ Completado en v1.5 (Nov 2025)
 
 **Solución Implementada:**
@@ -216,7 +173,7 @@ Se creó `utils/errors.py` con jerarquía de excepciones (`A2AException`, `Simul
 
 ---
 
-### 6. Caché de Resultados de LLM
+### 6. Caché de Resultados de LLM (PENDIENTE)
 **Problema:** Llamadas repetidas a Ollama con los mismos prompts
 
 **Solución:**

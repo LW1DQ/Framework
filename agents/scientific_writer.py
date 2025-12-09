@@ -31,7 +31,7 @@ def scientific_writer_node(state: AgentState) -> AgentState:
     Nodo del agente de escritura científica
     Genera documentos académicos a partir de resultados experimentales
     """
-    log_info("🖊️ Agente de Escritura Científica iniciado")
+    log_info("ScientificWriter", "🖊️ Agente de Escritura Científica iniciado")
     
     try:
         # Obtener tipo de documento solicitado
@@ -56,11 +56,11 @@ def scientific_writer_node(state: AgentState) -> AgentState:
         state["document_path"] = str(output_path)
         state["messages"].append(f"✅ Documento generado: {output_path}")
         
-        log_info(f"✅ Documento generado exitosamente: {output_path}")
+        log_info("ScientificWriter", f"✅ Documento generado exitosamente: {output_path}")
         return state
         
     except Exception as e:
-        log_error(f"❌ Error en agente de escritura científica: {e}")
+        log_error("ScientificWriter", f"❌ Error en agente de escritura científica: {e}")
         state["error"] = str(e)
         state["messages"].append(f"❌ Error generando documento: {e}")
         return state
@@ -71,7 +71,7 @@ def generate_experiment_briefing(results: Dict[str, Any], state: AgentState) -> 
     Genera un briefing conciso del experimento
     Ideal para reportes rápidos y actualizaciones
     """
-    log_info("📝 Generando briefing de experimento...")
+    log_info("ScientificWriter", "📝 Generando briefing de experimento...")
     
     # Extraer información clave
     experiment_name = results.get("experiment_name", "Experimento")
@@ -130,7 +130,7 @@ def generate_detailed_report(results: Dict[str, Any], state: AgentState) -> str:
     Genera un informe detallado del experimento
     Incluye análisis estadístico completo y gráficos
     """
-    log_info("📊 Generando informe detallado...")
+    log_info("ScientificWriter", "📊 Generando informe detallado...")
     
     experiment_name = results.get("experiment_name", "Experimento")
     config = results.get("configuration", {})
@@ -229,7 +229,7 @@ def generate_thesis_section(results: Dict[str, Any], state: AgentState) -> str:
     Genera una sección de tesis doctoral
     Formato académico completo con referencias
     """
-    log_info("🎓 Generando sección de tesis...")
+    log_info("ScientificWriter", "🎓 Generando sección de tesis...")
     
     section_type = state.get("thesis_section_type", "results")  # results, methodology, discussion
     experiment_name = results.get("experiment_name", "Experimento")
@@ -390,7 +390,7 @@ def generate_paper_draft(results: Dict[str, Any], state: AgentState) -> str:
     Genera un borrador de paper científico
     Formato IEEE o ACM
     """
-    log_info("📄 Generando borrador de paper...")
+    log_info("ScientificWriter", "📄 Generando borrador de paper...")
     
     experiment_name = results.get("experiment_name", "Experimento")
     config = results.get("configuration", {})
@@ -510,7 +510,7 @@ def save_document(content: str, doc_type: str, state: AgentState) -> Path:
     with open(filepath, 'w', encoding='utf-8') as f:
         f.write(content)
     
-    log_info(f"📁 Documento guardado en: {filepath}")
+    log_info("ScientificWriter", f"📁 Documento guardado en: {filepath}")
     return filepath
 
 
@@ -519,7 +519,7 @@ def generate_comparative_analysis(results_list: List[Dict[str, Any]], state: Age
     Genera un análisis comparativo de múltiples experimentos
     Útil para comparar protocolos o configuraciones
     """
-    log_info("📊 Generando análisis comparativo...")
+    log_info("ScientificWriter", "📊 Generando análisis comparativo...")
     
     prompt = f"""Genera un análisis comparativo detallado de los siguientes experimentos:
 
@@ -591,7 +591,7 @@ def generate_presentation_slides(results: Dict[str, Any], state: AgentState) -> 
     Genera contenido para slides de presentación
     Formato Markdown compatible con Marp o reveal.js
     """
-    log_info("🎤 Generando slides de presentación...")
+    log_info("ScientificWriter", "🎤 Generando slides de presentación...")
     
     experiment_name = results.get("experiment_name", "Experimento")
     metrics = results.get("metrics", {})

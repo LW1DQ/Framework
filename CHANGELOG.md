@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.4] - 2025-12-09
+
+### Fixed
+- **Critical Recursion Bug** - Fixed infinite loop between Coder and Critic agents by improving Coder's prompt with valid NS-3 examples.
+- **NS-3 Bindings Path** - Fixed `ModuleNotFoundError` by explicitly injecting `PYTHONPATH` in generated scripts.
+- **Graph Connectivity** - Fixed `supervisor.py` workflow where `Scientific Writer` was unreachable.
+- **Data Flow** - Fixed `Analyst` agent to correctly pass `experiment_results` to `Scientific Writer`.
+- **Logging** - Fixed `TypeError` in `Scientific Writer` logging calls.
+- **Researcher Agent** - Improved search query generation using LLM to avoid poor results.
+
+### Added
+- **Dependency** - Added `cppyy>=3.0.0` to `requirements.txt` for robust NS-3 Python bindings support.
+- **Documentation** - Added "Troubleshooting" section to `README.md` covering `PYTHONPATH` and `cppyy` issues.
+
+---
+
 ## [1.5.3] - 2025-11-28
 
 ### Fixed

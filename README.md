@@ -92,6 +92,19 @@ For detailed instructions, see [INSTALL.md](INSTALL.md).
 - **[Common Issues](docs/TROUBLESHOOTING.md)** - Solutions to frequent problems
 - **[FAQ](docs/FAQ.md)** - Frequently asked questions
 
+#### Critical Configuration
+> [!IMPORTANT]
+> **NS-3 Bindings Path**: The system requires the `PYTHONPATH` to include the NS-3 Python bindings.
+> If you installed NS-3 manually, ensure you export the path:
+> ```bash
+> export PYTHONPATH=$PYTHONPATH:/path/to/ns3/build/bindings/python
+> ```
+> The Coder Agent attempts to auto-detect this, but manual configuration ensures stability.
+
+#### Dependencies
+> [!NOTE]
+> **Cppyy**: This project uses `cppyy` for NS-3 integration. If you encounter installation errors, ensure you have a C++ compiler installed (`g++` or `clang++`) and Python development headers (`python3-dev`).
+
 ---
 
 ## 🤖 The 10 Specialized Agents
