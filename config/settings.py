@@ -1,30 +1,26 @@
 """
-Configuración Global del Sistema A2A
-Ajusta estos valores según tu entorno
+Configuración Global del Sistema A2A - Versión con Inyección de Dependencias
+Ajusta estos valores según tu entorno o usa variables de entorno
 """
 
 import os
 from pathlib import Path
+from typing import List
 
 # ============================================================================
-# RUTAS DEL PROYECTO
+# RUTAS DEL PROYECTO (BACKUP para compatibilidad)
 # ============================================================================
 
-# Directorio raíz del proyecto
+# Directorio raíz del proyecto (auto-detectado)
 PROJECT_ROOT = Path(__file__).parent.parent
-
-# Ruta a NS-3 (AJUSTAR SEGÚN TU INSTALACIÓN)
-# Ejemplo: /home/usuario/tesis-a2a/ns-allinone-3.43/ns-3.43
-NS3_ROOT = Path.home() / "ns-3.45"
 
 # Directorios del proyecto
 SIMULATIONS_DIR = PROJECT_ROOT / "simulations"
 DATA_DIR = PROJECT_ROOT / "data"
 LOGS_DIR = PROJECT_ROOT / "logs"
-CHROMA_PATH = DATA_DIR / "vector_db"
 
 # ============================================================================
-# CONFIGURACIÓN DE OLLAMA
+# CONFIGURACIÓN DE OLLAMA (BACKUP para compatibilidad)
 # ============================================================================
 
 # URL base de Ollama
@@ -36,56 +32,56 @@ MODEL_CODING = os.getenv("MODEL_CODING", "llama3.1:8b")
 MODEL_EMBEDDING = os.getenv("MODEL_EMBEDDING", "nomic-embed-text")
 
 # Parámetros de los modelos
-MODEL_TEMPERATURE_REASONING = 0.1  # Baja para respuestas más deterministas
-MODEL_TEMPERATURE_CODING = 0.05    # Muy baja para código preciso
-MODEL_TEMPERATURE_CREATIVE = 0.3   # Moderada para análisis
+MODEL_TEMPERATURE_REASONING = float(os.getenv("MODEL_TEMPERATURE_REASONING", "0.1"))
+MODEL_TEMPERATURE_CODING = float(os.getenv("MODEL_TEMPERATURE_CODING", "0.05"))
+MODEL_TEMPERATURE_CREATIVE = float(os.getenv("MODEL_TEMPERATURE_CREATIVE", "0.3"))
 
 # ============================================================================
 # LÍMITES Y TIMEOUTS
 # ============================================================================
 
 # Número máximo de iteraciones para corrección de errores
-MAX_ITERATIONS = 5
+MAX_ITERATIONS = int(os.getenv("MAX_ITERATIONS", "5"))
 
 # Timeout para simulaciones NS-3 (en segundos)
-SIMULATION_TIMEOUT = 900  # 15 minutos
+SIMULATION_TIMEOUT = int(os.getenv("SIMULATION_TIMEOUT", "900"))
 
 # Timeout para llamadas a LLM (en segundos)
-LLM_TIMEOUT = 120  # 2 minutos
+LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT", "120"))
 
 # ============================================================================
 # CONFIGURACIÓN DE CHROMADB
 # ============================================================================
 
 # Nombre de la colección para papers
-CHROMA_COLLECTION_PAPERS = "thesis_papers"
+CHROMA_COLLECTION_PAPERS = os.getenv("CHROMA_COLLECTION", "thesis_papers")
 
 # Número de resultados en búsquedas
-CHROMA_N_RESULTS = 5
+CHROMA_N_RESULTS = int(os.getenv("CHROMA_N_RESULTS", "5"))
 
 # ============================================================================
 # CONFIGURACIÓN DE SEMANTIC SCHOLAR
 # ============================================================================
 
 # Número máximo de papers a buscar
-SEMANTIC_SCHOLAR_MAX_RESULTS = 10
+SEMANTIC_SCHOLAR_MAX_RESULTS = int(os.getenv("SEMANTIC_SCHOLAR_MAX_RESULTS", "10"))
 
 # Años de publicación a considerar
-SEMANTIC_SCHOLAR_YEAR_FROM = 2020
-SEMANTIC_SCHOLAR_YEAR_TO = 2025
+SEMANTIC_SCHOLAR_YEAR_FROM = int(os.getenv("SEMANTIC_SCHOLAR_YEAR_FROM", "2020"))
+SEMANTIC_SCHOLAR_YEAR_TO = int(os.getenv("SEMANTIC_SCHOLAR_YEAR_TO", "2025"))
 
 # ============================================================================
 # CONFIGURACIÓN DE VISUALIZACIÓN
 # ============================================================================
 
 # DPI para gráficos
-PLOT_DPI = 300
+PLOT_DPI = int(os.getenv("PLOT_DPI", "300"))
 
 # Tamaño de figura por defecto
 PLOT_FIGSIZE = (10, 6)
 
 # Estilo de gráficos
-PLOT_STYLE = "seaborn-v0_8-whitegrid"
+PLOT_STYLE = os.getenv("PLOT_STYLE", "seaborn-v0_8-whitegrid")
 
 # ============================================================================
 # CONFIGURACIÓN DE LOGGING
@@ -95,7 +91,7 @@ PLOT_STYLE = "seaborn-v0_8-whitegrid"
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 # Formato de logs
-LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+LOG_FORMAT = os.getenv("LOG_FORMAT", "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 # Archivo de log principal
 LOG_FILE = LOGS_DIR / "sistema_a2a.log"
@@ -104,33 +100,58 @@ LOG_FILE = LOGS_DIR / "sistema_a2a.log"
 # CREAR DIRECTORIOS SI NO EXISTEN
 # ============================================================================
 
-for directory in [SIMULATIONS_DIR, DATA_DIR, LOGS_DIR, CHROMA_PATH]:
-    directory.mkdir(parents=True, exist_ok=True)
+def ensure_directories():
+    """Crea directorios necesarios si no existen"""
+    directories = [
+        SIMULATIONS_DIR,
+        DATA_DIR,
+        LOGS_DIR,
+        DATA_DIR / "vector_db",
+        SIMULATIONS_DIR / "scripts",
+        SIMULATIONS_DIR / "results",
+        SIMULATIONS_DIR / "plots",
+        DATA_DIR / "papers"
+    ]
+    
+    for directory in directories:
+        directory.mkdir(parents=True, exist_ok=True)
 
-# Crear subdirectorios de simulaciones
-(SIMULATIONS_DIR / "scripts").mkdir(exist_ok=True)
-(SIMULATIONS_DIR / "results").mkdir(exist_ok=True)
-(SIMULATIONS_DIR / "plots").mkdir(exist_ok=True)
-
-# Crear subdirectorios de datos
-(DATA_DIR / "papers").mkdir(exist_ok=True)
+# Crear directorios
+ensure_directories()
 
 # ============================================================================
-# VALIDACIONES
+# FUNCIONES DE VALIDACIÓN (ACTUALIZADAS PARA USAR DI)
 # ============================================================================
 
-def validate_configuration():
+def validate_configuration() -> List[str]:
     """
-    Valida que la configuración sea correcta
+    Valida que la configuración sea correcta.
+    
+    Returns:
+        Lista de errores encontrados
+    """
+    # Importar sistema de DI si está disponible
+    try:
+        from utils.dependency_injection import validate_system_configuration
+        return validate_system_configuration()
+    except ImportError:
+        # Fallback a validación básica
+        return validate_configuration_basic()
+
+
+def validate_configuration_basic() -> List[str]:
+    """
+    Validación básica sin DI (fallback)
     """
     errors = []
     
-    # Verificar que NS-3 existe
-    if not NS3_ROOT.exists():
-        errors.append(f"NS-3 no encontrado en: {NS3_ROOT}")
+    # Verificar NS-3
+    ns3_root = os.getenv("NS3_ROOT", str(Path.home() / "ns-3.45"))
+    if not Path(ns3_root).exists():
+        errors.append(f"NS-3 no encontrado en: {ns3_root}")
     
     # Verificar que el ejecutable ns3 existe
-    ns3_executable = NS3_ROOT / "ns3"
+    ns3_executable = Path(ns3_root) / "ns3"
     if not ns3_executable.exists():
         errors.append(f"Ejecutable ns3 no encontrado en: {ns3_executable}")
     
@@ -145,6 +166,7 @@ def validate_configuration():
     
     return errors
 
+
 # ============================================================================
 # INFORMACIÓN DEL SISTEMA
 # ============================================================================
@@ -157,14 +179,36 @@ def print_configuration():
     print("CONFIGURACIÓN DEL SISTEMA A2A")
     print("=" * 80)
     print(f"Directorio del proyecto: {PROJECT_ROOT}")
-    print(f"NS-3: {NS3_ROOT}")
+    print(f"NS-3: {os.getenv('NS3_ROOT', str(Path.home() / 'ns-3.45'))}")
     print(f"Ollama: {OLLAMA_BASE_URL}")
     print(f"Modelo de razonamiento: {MODEL_REASONING}")
     print(f"Modelo de código: {MODEL_CODING}")
     print(f"Modelo de embeddings: {MODEL_EMBEDDING}")
     print(f"Máximo de iteraciones: {MAX_ITERATIONS}")
     print(f"Timeout de simulación: {SIMULATION_TIMEOUT}s")
+    print(f"Ambiente: {os.getenv('ENVIRONMENT', 'development')}")
     print("=" * 80)
+
+
+def setup_environment():
+    """
+    Configura el ambiente basado en variables de entorno
+    """
+    # Configurar PYTHONPATH para NS-3 si está disponible
+    ns3_root = os.getenv("NS3_ROOT")
+    if ns3_root:
+        python_bindings = Path(ns3_root) / "build" / "bindings" / "python"
+        if python_bindings.exists():
+            python_path = str(python_bindings)
+            if "PYTHONPATH" in os.environ:
+                os.environ["PYTHONPATH"] = python_path + ":" + os.environ["PYTHONPATH"]
+            else:
+                os.environ["PYTHONPATH"] = python_path
+
+
+# Configurar ambiente automáticamente
+setup_environment()
+
 
 if __name__ == "__main__":
     print_configuration()

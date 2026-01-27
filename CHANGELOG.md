@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.0] - 2026-01-27
+
+### Added
+- **Dependency Injection System**: Complete DI container for flexible configuration (`utils/dependency_injection.py`)
+- **Retry Patterns**: Comprehensive retry mechanism with exponential backoff (`utils/retry_patterns.py`)
+- **Agent Refactoring**: 
+  - Refactored analyst agent with modular architecture (`agents/analyst_refactored.py`)
+  - Refactored optimizer agent with enhanced capabilities (`agents/optimizer_refactored.py`)
+- **Analysis Subsystem**: 
+  - Metrics analyzer for performance tracking (`agents/analysis/metrics_analyzer.py`)
+  - Report generator with multiple output formats (`agents/analysis/report_generator.py`)
+- **Optimization Subsystem**:
+  - Code generator with template support (`agents/optimization/code_generator.py`)
+  - Optimization proposer with ML-based suggestions (`agents/optimization/optimization_proposer.py`)
+  - Performance analyzer for bottleneck detection (`agents/optimization/performance_analyzer.py`)
+- **Integration Testing**: Comprehensive integration test suite (`tests/test_integration.py`)
+- **Validation Script**: Automated validation for all improvements (`scripts/validate_improvements.py`)
+- **Agent Documentation**: Complete AGENTS.md guide for agentic coding
+
+### Enhanced
+- **Configuration Management**: Updated settings with DI support and environment-specific configs
+- **Error Handling**: Improved error patterns across all agents
+- **Code Architecture**: Modular design with clear separation of concerns
+- **Testing**: Better test coverage with mocking and fixtures
+
+### Fixed
+- **State Management**: Immutable state updates with proper audit trails
+- **Resource Management**: Better handling of NS-3 resources and cleanup
+- **Memory Usage**: Optimized memory patterns for long-running simulations
+
+### Technical Details
+- **Lines of Code**: +4,244 additions across 15 files
+- **Architecture**: Moved from monolithic agents to modular subsystems
+- **Testing**: Added comprehensive integration test coverage
+- **Documentation**: Complete developer onboarding guide
+
+---
+
 ## [1.5.4] - 2025-12-09
 
 ### Fixed
@@ -481,4 +519,4 @@ If you use A2A in your research, please cite:
 
 ---
 
-**Last Updated**: 2025-11-26
+**Last Updated**: 2026-01-27
