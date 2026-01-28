@@ -22,6 +22,7 @@ from utils.statistical_tests import (
     calculate_all_confidence_intervals,
     generate_statistical_report
 )
+from utils.prompts import get_prompt
 
 
 def parse_flowmonitor_xml(xml_path: str) -> pd.DataFrame:
@@ -145,15 +146,6 @@ def calculate_routing_overhead(df: pd.DataFrame, trace_analysis: list = None) ->
         total_bytes = df['tx_bytes'].sum() if 'tx_bytes' in df.columns else 0
         
         # Estimaciones típicas por protocolo (basadas en literatura)
-        # Estos valores se pueden ajustar basándose en análisis PCAP reales
-        protocol_overheads = {
-            'aodv': 0.15,    # AODV típicamente 10-20%
-            'olsr': 0.35,    # OLSR típicamente 30-40% (proactivo)
-            'dsdv': 0.45,    # DSDV típicamente 40-50% (proactivo)
-            'dsr': 0.20      # DSR típicamente 15-25%
-        }
-        
-        # Detectar protocolo (simplificado)
         estimated_overhead = 0.20  # Default 20%
         
         print(f"  📊 Overhead estimado (sin PCAP): {estimated_overhead:.3f} ({estimated_overhead*100:.1f}%)")
@@ -256,98 +248,12 @@ Eficiencia de Red: {kpis.get('network_efficiency', 0):.2f}
 Clasificación: {kpis.get('performance_grade', 'N/A')}
 """
         
-        prompt = f"""
-Eres un experto en optimización de protocolos de enrutamiento con Deep Reinforcement Learning y Graph Neural Networks.
-
-**TAREA ORIGINAL:**
-{task}
-
-{stats_summary}
-
-**ANÁLISIS PROFUNDO REQUERIDO:**
-
-1. **Diagnóstico del Rendimiento Actual** (2-3 párrafos):
-   - Evaluación crítica: ¿Es aceptable para una red de este tipo?
-   - Comparación con benchmarks típicos de la literatura
-   - Identificación de métricas problemáticas y sus causas probables
-   - Análisis de variabilidad (desviaciones estándar altas/bajas)
-
-2. **Identificación de Cuellos de Botella** (específico):
-   - Problemas de congestión (si PDR < 85%)
-   - Problemas de latencia (si delay > 100ms)
-   - Problemas de throughput (si < 1 Mbps)
-   - Problemas de estabilidad (si std alta)
-   - Factores del protocolo de enrutamiento que limitan rendimiento
-
-3. **Propuesta de Arquitectura Deep Learning** (detallado):
-   
-   a) **Tipo de Red Neuronal**:
-      - DQN (Deep Q-Network) para decisiones discretas
-      - A3C (Asynchronous Advantage Actor-Critic) para entornos distribuidos
-      - GNN (Graph Neural Network) para topologías dinámicas
-      - Transformer para secuencias temporales
-      - Justifica tu elección basándote en las métricas
-
-   b) **Espacio de Estados** (qué observa el agente):
-      - Información local del nodo (buffer, vecinos, energía)
-      - Información de red (topología, tráfico, congestión)
-      - Métricas históricas (PDR reciente, delay promedio)
-      - Dimensionalidad sugerida
-
-   c) **Espacio de Acciones** (qué puede decidir):
-      - Selección de siguiente salto
-      - Ajuste de parámetros del protocolo
-      - Control de tasa de transmisión
-      - Gestión de rutas alternativas
-
-   d) **Función de Recompensa** (ecuación específica):
-      - Componentes: PDR, delay, throughput, overhead
-      - Pesos sugeridos para cada componente
-      - Penalizaciones (paquetes perdidos, colisiones)
-      - Ejemplo: R = w1*PDR - w2*delay - w3*overhead + w4*throughput
-
-4. **Plan de Implementación en NS-3** (paso a paso):
-   
-   a) **Integración con ns3-ai**:
-      - Configurar interfaz Python-C++ con ns3-ai
-      - Definir mensajes de comunicación (estado/acción)
-      - Frecuencia de decisiones del agente
-
-   b) **Arquitectura del Sistema**:
-      - NS-3 como simulador de red
-      - PyTorch/TensorFlow para red neuronal
-      - Gym environment para interfaz RL
-      - Buffer de experiencias para training
-
-   c) **Proceso de Entrenamiento**:
-      - Número de episodios sugerido (1000-5000)
-      - Duración de cada episodio
-      - Estrategia de exploración (ε-greedy)
-      - Criterio de convergencia
-
-   d) **Configuración Específica**:
-      - Modificaciones al protocolo baseline
-      - Puntos de instrumentación en NS-3
-      - Logging y debugging
-
-5. **Mejoras Incrementales Sugeridas** (antes de DL):
-   - Ajustes de parámetros del protocolo actual
-   - Optimizaciones simples que podrían mejorar métricas
-   - Quick wins
-
-6. **Métricas de Éxito** (objetivos cuantitativos):
-   - PDR objetivo: X%
-   - Delay objetivo: Y ms
-   - Throughput objetivo: Z Mbps
-   - Mejora esperada vs baseline: W%
-
-**FORMATO:**
-- Sé extremadamente específico y técnico
-- Incluye ecuaciones cuando sea relevante
-- Proporciona valores numéricos concretos
-- Cita papers relevantes si es posible
-- Prioriza implementabilidad
-"""
+        prompt = get_prompt(
+            'analyst',
+            'optimization_proposal',
+            task=task,
+            stats_summary=stats_summary
+        )
         
         response = llm.invoke(prompt)
         

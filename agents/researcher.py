@@ -25,6 +25,7 @@ from config.settings import (
 )
 from utils.state import AgentState, add_audit_entry
 from utils.logging_utils import update_agent_status, log_message
+from utils.prompts import get_prompt
 
 
 def rate_limit(calls_per_minute: int = 10):
@@ -215,47 +216,12 @@ def synthesize_research(task: str, papers: list) -> str:
             for i, p in enumerate(papers[:7])
         ])
         
-        prompt = f"""
-Eres un investigador experto en redes de telecomunicaciones, protocolos de enrutamiento y ciudades inteligentes.
-
-**TAREA DE INVESTIGACIÓN:**
-{task}
-
-**PAPERS ENCONTRADOS (ordenados por relevancia):**
-{papers_summary}
-
-**ANÁLISIS REQUERIDO:**
-
-1. **Estado del Arte** (3-4 párrafos):
-   - Técnicas y algoritmos más prometedores mencionados
-   - Métricas de rendimiento reportadas (PDR, latencia, throughput, overhead)
-   - Comparación entre enfoques (tradicionales vs ML/DL)
-   - Limitaciones y desafíos identificados
-
-2. **Implementación en NS-3**:
-   - Protocolos de enrutamiento específicos mencionados (AODV, OLSR, DSDV, etc.)
-   - Configuraciones de red sugeridas (número de nodos, área, movilidad)
-   - Parámetros críticos a ajustar
-   - Módulos de NS-3 relevantes
-
-3. **Oportunidades de Investigación con Deep Learning**:
-   - Arquitecturas de redes neuronales aplicables (DQN, A3C, GNN, Transformer)
-   - Variables de estado para el agente RL
-   - Espacio de acciones posibles
-   - Función de recompensa sugerida
-   - Métricas de evaluación
-
-4. **Brechas y Contribuciones Potenciales**:
-   - Qué no se ha explorado suficientemente
-   - Combinaciones novedosas de técnicas
-   - Escenarios no evaluados
-
-**FORMATO:**
-- Sé específico y técnico
-- Cita números de paper cuando sea relevante [Paper X]
-- Incluye valores numéricos cuando estén disponibles
-- Prioriza información implementable
-"""
+        prompt = get_prompt(
+            'researcher',
+            'synthesis',
+            task=task,
+            papers_summary=papers_summary
+        )
         
         response = llm.invoke(prompt)
         
@@ -348,13 +314,9 @@ def generate_search_query(task: str) -> str:
     """Genera una consulta de búsqueda concisa basada en la tarea"""
     try:
         llm = ChatOllama(model=MODEL_REASONING, base_url=OLLAMA_BASE_URL)
-        prompt = f"""
-        Genera una consulta de búsqueda académica (keywords en inglés) para la siguiente tarea de investigación.
-        La consulta debe ser corta (máximo 5-7 palabras) y enfocada en los temas principales.
-        Solo devuelve la consulta, nada más.
         
-        Tarea: {task}
-        """
+        prompt = get_prompt('researcher', 'generate_query', task=task)
+        
         response = llm.invoke(prompt)
         query = response.content.strip().replace('"', '')
         if "Query:" in query:
@@ -476,7 +438,7 @@ Se recomienda ejecutar simulaciones con diferentes configuraciones para
 obtener resultados empíricos.
 """
         
-        # Añadir contexto local si existe
+        # Añadir context local si existe
         if local_docs:
             synthesis += "\n\n**Contexto de investigaciones previas:**\n"
             synthesis += "\n".join([f"- {doc[:200]}..." for doc in local_docs[:2]])

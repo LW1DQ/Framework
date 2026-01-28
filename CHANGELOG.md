@@ -9,39 +9,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.6.0] - 2026-01-27
 
-### Added
-- **Dependency Injection System**: Complete DI container for flexible configuration (`utils/dependency_injection.py`)
-- **Retry Patterns**: Comprehensive retry mechanism with exponential backoff (`utils/retry_patterns.py`)
-- **Agent Refactoring**: 
-  - Refactored analyst agent with modular architecture (`agents/analyst_refactored.py`)
-  - Refactored optimizer agent with enhanced capabilities (`agents/optimizer_refactored.py`)
-- **Analysis Subsystem**: 
-  - Metrics analyzer for performance tracking (`agents/analysis/metrics_analyzer.py`)
-  - Report generator with multiple output formats (`agents/analysis/report_generator.py`)
-- **Optimization Subsystem**:
-  - Code generator with template support (`agents/optimization/code_generator.py`)
-  - Optimization proposer with ML-based suggestions (`agents/optimization/optimization_proposer.py`)
-  - Performance analyzer for bottleneck detection (`agents/optimization/performance_analyzer.py`)
-- **Integration Testing**: Comprehensive integration test suite (`tests/test_integration.py`)
-- **Validation Script**: Automated validation for all improvements (`scripts/validate_improvements.py`)
-- **Agent Documentation**: Complete AGENTS.md guide for agentic coding
+### Major Architectural Changes
+- **"Artificial Scientist" Core**: Introduction of a centralized cognitive architecture where a Supervisor agent orchestrates 10 specialized sub-agents.
+- **Centralized Prompt Management**: All LLM prompts are now managed via `config/prompts.yaml` and `utils/prompts.py`.
+- **Robustness Framework**: 
+  - Cryptographically verifiable `simulation_metadata.json` manifest for every simulation.
+  - Simulator agent uses this for ground-truth verification.
 
-### Enhanced
-- **Configuration Management**: Updated settings with DI support and environment-specific configs
-- **Error Handling**: Improved error patterns across all agents
-- **Code Architecture**: Modular design with clear separation of concerns
-- **Testing**: Better test coverage with mocking and fixtures
+### New Subsystems
+- **Optimization Engine**:
+  - `agents/optimization/`: Modular subsystem for code generation and performance analysis.
+  - `agents/optimizer_refactored.py`: Enhanced optimizer with ML-based suggestions.
+- **Analysis Engine**:
+  - `agents/analysis/`: Dedicated metrics analyzer and report generator.
+- **Dependency Injection**: Complete DI container (`utils/dependency_injection.py`) for flexible configuration.
 
-### Fixed
-- **State Management**: Immutable state updates with proper audit trails
-- **Resource Management**: Better handling of NS-3 resources and cleanup
-- **Memory Usage**: Optimized memory patterns for long-running simulations
+### Capabilities & Integration
+- **NS-3 AI Integration**: Native Python-C++ shared memory interface (`agents/ns3_ai_integration.py`) for high-performance DRL.
+- **Automated Setup**: New `ns3_ai_setup.sh` script for full environment compilation.
+- **Full Trace Analysis**: Integration of `tshark` processing.
 
-### Technical Details
-- **Lines of Code**: +4,244 additions across 15 files
-- **Architecture**: Moved from monolithic agents to modular subsystems
-- **Testing**: Added comprehensive integration test coverage
-- **Documentation**: Complete developer onboarding guide
+### Agent Improvements
+- **Coder Agent**: Chain-of-Thought reasoning and self-correction.
+- **Scientific Writer**: IEEE-compliant LaTeX section generation.
+- **Analyst**: Automatic confidence interval calculation.
+- **Resilience**: Comprehensive retry patterns (`utils/retry_patterns.py`) with exponential backoff.
+
+### Fixes
+- **Dependency Hell**: Resolved `cppyy` and `langgraph` conflicts.
+- **Path Resolution**: Fixed `PYTHONPATH` injection for custom NS-3 bindings.
+
+---
 
 ---
 

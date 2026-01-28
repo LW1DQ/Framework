@@ -1,345 +1,107 @@
-# 📦 Installation Guide - A2A Framework
+# A2A Framework Installation Guide
 
-Complete installation instructions for Ubuntu/Linux systems.
+This document provides detailed instructions for installing and configuring the A2A Multi-Agent Framework on Ubuntu systems.
 
----
+## Prerequisites
 
-## 📋 Table of Contents
-
-1. [System Requirements](#system-requirements)
-2. [Quick Installation](#quick-installation)
-3. [Detailed Installation](#detailed-installation)
-4. [NS-3 Installation](#ns-3-installation)
-5. [Verification](#verification)
-6. [Troubleshooting](#troubleshooting)
+- **Operating System**: Ubuntu 22.04 LTS or 24.04 LTS (Recommended)
+- **RAM**: Minimum 8GB (16GB recommended for compilation)
+- **Storage**: At least 10GB of free space
 
 ---
 
-## 💻 System Requirements
+## 🚀 Option 1: Automated Installation (Recommended)
 
-### Minimum Requirements
-- **OS**: Ubuntu 20.04+ / Debian 11+ / Other Linux distributions
-- **CPU**: 4 cores
-- **RAM**: 8 GB
-- **Storage**: 20 GB free space
-- **Python**: 3.10 or higher
+We provide a comprehensive setup script that handles:
+1.  System dependency installation (compilers, headers).
+2.  NS-3 download and compilation.
+3.  `ns3-ai` integration setup.
+4.  Python virtual environment creation with all dependencies.
 
-### Recommended Requirements
-- **OS**: Ubuntu 22.04 LTS
-- **CPU**: 8+ cores
-- **RAM**: 16 GB
+### Steps
 
-### One-Click Installation (Recommended)
+1.  **Clone the Repository**
+    ```bash
+    git clone https://github.com/LW1DQ/Framework.git
+    cd Framework
+    ```
 
-The easiest way to install the A2A Framework is using the automated script:
+2.  **Run the Setup Script**
+    ```bash
+    chmod +x ns3_ai_setup.sh
+    ./ns3_ai_setup.sh
+    ```
+    *Note: This process may take 15-30 minutes depending on your hardware, as it compiles NS-3 from source.*
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/LW1DQ/Framework.git
-cd Framework
+3.  **Activate the Environment**
+    ```bash
+    source .venv/bin/activate
+    ```
 
-# 2. Run the installer
-./install.sh
-```
-
-This script will automatically:
-- Install system dependencies
-- Set up Python 3.10+ and virtual environment
-- Install and configure NS-3 with 5G-LENA and ns3-ai
-- Install and configure Ollama
-- Verify the installation
-
-### Manual Installation
-If you prefer to install manually, follow the [Detailed Installation](#detailed-installation) section below.
-
-**Detailed NS-3 installation guide**: See [ns3-integration/INSTALL-NS3-AI.md](ns3-integration/INSTALL-NS3-AI.md)
+4.  **Verify Installation**
+    Run the smoke test to ensure NS-3 bindings are correctly loaded:
+    ```bash
+    python3 tests/smoke_test.py
+    ```
+    You should see: `Minimal simulation completed successfully.`
 
 ---
 
-## ✅ Verification
+## 🛠️ Option 2: Manual Installation (Advanced)
 
-### Verify System Installation
+If you prefer to manage your own NS-3 installation or are integrating into an existing environment.
 
+### 1. Install System Dependencies
 ```bash
-# Activate virtual environment
-source venv/bin/activate
-
-# Run verification script
-python verify-system-complete.py
-```
-
-**Expected output**:
-```
-======================================================================
-              VERIFICACIÓN COMPLETA DEL SISTEMA A2A v1.5
-======================================================================
-
-✅ Python 3.10.x
-✅ 16/16 Paquetes instalados
-✅ 10/10 Agentes funcionales
-✅ 11/11 Tests pasados
-✅ 100% Verificado
-```
-
-### Run Unit Tests
-
-```bash
-pytest tests/ -v
-```
-
-**Expected**: All 11 tests should pass.
-
-### Test Dashboard
-
-```bash
-streamlit run dashboard.py
-```
-
-**Expected**: Dashboard opens in browser at `http://localhost:8501`
-
-### Test Scientific Writer
-
-```bash
-python examples/test_scientific_writer.py
-```
-
-**Expected**: 4 documents generated in `generated_documents/`
-
----
-
-## 🐛 Troubleshooting
-
-### Issue: Python version too old
-
-**Error**: `Python 3.10+ required`
-
-**Solution**:
-```bash
-# Install Python 3.10
-sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt update
-sudo apt install python3.10 python3.10-venv python3.10-dev
-
-# Use Python 3.10 explicitly
-python3.10 -m venv venv
-source venv/bin/activate
+sudo apt install build-essential python3-dev git cmake ninja-build
 ```
 
-### Issue: pip install fails
-
-**Error**: `Failed building wheel for X`
-
-**Solution**:
+### 2. Install and Compile NS-3 (with Python bindings)
+Downlad NS-3 (version 3.45 recommended):
 ```bash
-# Install build dependencies
-sudo apt install -y python3-dev build-essential
-
-# Upgrade pip
-pip install --upgrade pip setuptools wheel
-
-# Try again
-pip install -r requirements.txt
+wget https://www.nsnam.org/releases/ns-allinone-3.45.tar.bz2
+tar xjf ns-allinone-3.45.tar.bz2
+cd ns-allinone-3.45/ns-3.45
 ```
 
-### Issue: Ollama not found
-
-**Error**: `ollama: command not found`
-
-**Solution**:
+Configure and build:
 ```bash
-# Install Ollama
-curl -fsSL https://ollama.com/install.sh | sh
-
-# Start Ollama service
-systemctl start ollama
-
-# Pull model
-ollama pull llama3.1:8b
-```
-
-### Issue: ChromaDB fails to install
-
-**Error**: `Failed to build chromadb`
-
-**Solution**:
-```bash
-# Install additional dependencies
-sudo apt install -y libsqlite3-dev
-
-# Install ChromaDB separately
-pip install chromadb==0.5.5
-```
-
-### Issue: NS-3 build fails
-
-**Error**: `Build failed`
-
-**Solution**:
-```bash
-# Install missing dependencies
-sudo apt install -y gcc g++ python3-dev cmake
-
-# Clean and rebuild
-./ns3 clean
-./ns3 configure --enable-examples
+./ns3 configure --enable-python-bindings --enable-examples --enable-tests
 ./ns3 build
 ```
 
-### Issue: Tests fail
+### 3. Install ns3-ai (Optional, for DRL)
+Follow the [Official ns3-ai Documentation](https://github.com/hust-diangroup/ns3-ai) to clone and build the module in the `contrib/` directory of your NS-3 installation.
 
-**Error**: `ImportError: No module named X`
-
-**Solution**:
+### 4. Configure Python Environment
+Navigate back to the Framework directory:
 ```bash
-# Ensure virtual environment is activated
-source venv/bin/activate
-
-# Reinstall dependencies
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-
-# Run tests again
-pytest tests/ -v
 ```
 
-### Issue: Dashboard doesn't start
-
-**Error**: `streamlit: command not found`
-
-**Solution**:
-```bash
-# Ensure virtual environment is activated
-source venv/bin/activate
-
-# Install streamlit
-pip install streamlit
-
-# Run dashboard
-streamlit run dashboard.py
-```
-
----
-
-## 🔄 Updating
-
-To update to the latest version:
+### 5. Set Environment Variables
+You must tell Python where to find the NS-3 bindings. Add this to your `.bashrc` or run it in your terminal:
 
 ```bash
-# Pull latest changes
-git pull origin main
-
-# Update dependencies
-pip install --upgrade -r requirements.txt
-
-# Verify installation
-python verify-system-complete.py
+export PYTHONPATH=$PYTHONPATH:/path/to/ns-3.45/build/bindings/python:/path/to/ns-3.45/build/lib
 ```
+*(Replace `/path/to/ns-3.45` with your actual installation path)*
 
 ---
 
-## 🗑️ Uninstallation
+## ❓ Troubleshooting
 
-To completely remove the A2A framework:
+### "ModuleNotFoundError: No module named 'ns'"
+- **Cause**: Python cannot find the NS-3 bindings.
+- **Fix**: accurate `PYTHONPATH`. Check it with `echo $PYTHONPATH`. Ensure it points to the `build/bindings/python` directory of your compiled NS-3.
 
-```bash
-# Deactivate virtual environment
-deactivate
+### "cppyy" compilation errors
+- **Cause**: Missing system headers.
+- **Fix**: Ensure `python3-dev` and `g++` are installed (`sudo apt install python3-dev g++`).
 
-# Remove project directory
-cd ..
-rm -rf Framework
-
-# Optional: Remove Ollama
-sudo systemctl stop ollama
-sudo rm /usr/local/bin/ollama
-sudo rm -rf ~/.ollama
-
-# Optional: Remove NS-3
-rm -rf ~/ns3
-```
-
----
-
-## 📚 Next Steps
-
-After successful installation:
-
-1. **Read the User Manual**: [MANUAL_USUARIO.md](MANUAL_USUARIO.md)
-2. **Try Quick Start**: [docs/QUICK-START.md](docs/QUICK-START.md)
-3. **Run First Experiment**: [experiments/README.md](experiments/README.md)
-4. **Explore Examples**: [examples/](examples/)
-
----
-
-## 💡 Tips
-
-### Performance Optimization
-
-```bash
-# Use faster package installer
-pip install uv
-uv pip install -r requirements.txt
-
-# Enable parallel builds for NS-3
-./ns3 configure --enable-examples -j$(nproc)
-./ns3 build -j$(nproc)
-```
-
-### Development Setup
-
-```bash
-# Install development dependencies
-pip install -e ".[dev]"
-
-# Install pre-commit hooks
-pre-commit install
-
-# Run code quality checks
-flake8 agents/ utils/
-mypy agents/ utils/
-black agents/ utils/
-```
-
-### Resource Management
-
-```bash
-# Monitor system resources
-htop
-
-# Check disk space
-df -h
-
-# Monitor GPU (if available)
-nvidia-smi
-```
-
----
-
-## 🆘 Getting Help
-
-If you encounter issues not covered here:
-
-1. **Check Troubleshooting**: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
-2. **Search Issues**: [GitHub Issues](https://github.com/LW1DQ/Framework/issues)
-3. **Ask Community**: [GitHub Discussions](https://github.com/LW1DQ/Framework/discussions)
-4. **Contact Support**: contact@lw1dq.com
-
----
-
-## ✅ Installation Checklist
-
-- [ ] System dependencies installed
-- [ ] Python 3.10+ installed
-- [ ] Virtual environment created and activated
-- [ ] Python dependencies installed
-- [ ] Ollama installed and model pulled
-- [ ] Verification script passed (100%)
-- [ ] Unit tests passed (11/11)
-- [ ] Dashboard launches successfully
-- [ ] NS-3 installed (optional)
-- [ ] ns3-ai installed (optional)
-
----
-
-**Installation complete! You're ready to start using A2A.** 🎉
-
-[← Back to README](README.md) | [User Manual →](MANUAL_USUARIO.md)
+### "Externally Managed Environment" error
+- **Cause**: Trying to install pip packages globally on Ubuntu 24.04+.
+- **Fix**: Always use the virtual environment (`source .venv/bin/activate`).

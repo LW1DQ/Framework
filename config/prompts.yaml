@@ -1,0 +1,449 @@
+coder:
+  chain_of_thought: |
+    Planifica una simulación NS-3 paso a paso con máximo detalle:
+
+    **TAREA:** {task}
+
+    **CONTEXTO DE INVESTIGACIÓN:**
+    {research_notes}
+    {memory_context}
+
+    Responde con precisión:
+    1. **Tipo de red**: MANET/VANET/WSN/Mesh - justifica
+    2. **Topología**: Número de nodos, área de simulación (mxm), densidad
+    3. **Protocolo de enrutamiento**: AODV/OLSR/DSDV/DSR/HWMP - razón de elección
+    4. **Métricas objetivo**: PDR, latencia, throughput, overhead, jitter
+    5. **Modelo de movilidad**: RandomWaypoint/ConstantPosition/GaussMarkov - parámetros
+    6. **Tráfico**: Tipo (UDP/TCP), tasa de paquetes, tamaño
+    7. **Duración**: Tiempo de simulación en segundos (100-300s)
+    8. **Configuración WiFi**: Estándar (802.11a/b/g/n), potencia TX, rango
+
+  generation: |
+    Eres un experto en NS-3 Python bindings. Genera un script COMPLETO, EJECUTABLE y ROBUSTO.
+
+    **OBJETIVO:**
+    {task}
+
+    **TU PLANIFICACIÓN DETALLADA:**
+    {plan}
+
+    **INSTRUCCIONES CRÍTICAS:**
+    1. USA SOLO Python bindings de NS-3 (NO C++)
+    2. Imports correctos: import ns.core, import ns.network, import ns.internet, import ns.wifi, import ns.mobility, import ns.applications, import ns.flow_monitor
+    3. Para protocolos de enrutamiento: import ns.aodv, import ns.olsr, import ns.dsdv
+    4. Para redes mesh (HWMP): import ns.mesh, usar MeshHelper en lugar de WifiHelper
+    4. Configura FlowMonitor CORRECTAMENTE para exportar a "resultados.xml"
+    5. **IMPORTANTE: Habilita captura PCAP con phy.EnablePcapAll("simulacion", True)**
+    6. Usa modelos de movilidad apropiados con parámetros realistas
+    7. Configura aplicaciones de tráfico (UdpEchoClient/Server o OnOffApplication)
+    8. Duración: 100-300 segundos
+    9. Incluye logging para debugging
+    10. Manejo de errores básico
+    11. Comentarios en español explicando cada sección
+
+    **ESTRUCTURA OBLIGATORIA:**
+    ```python
+    #!/usr/bin/env python3
+    """
+    Script de simulación NS-3 generado automáticamente
+    Objetivo: {task}
+    """
+    import sys
+    import os
+    import json
+    import time
+    import datetime
+    
+    # Add NS-3 bindings path
+    sys.path.insert(0, 'build/lib/python3')
+    sys.path.insert(0, '/home/diego/ns3/build/bindings/python')
+
+    # Imports de NS-3
+    import ns.core
+    import ns.network
+    import ns.internet
+    import ns.wifi
+    import ns.mobility
+    import ns.applications
+    import ns.flow_monitor
+    # import ns.aodv  # Si usas AODV
+    # import ns.olsr  # Si usas OLSR
+    # import ns.mesh  # Si usas HWMP (IEEE 802.11s)
+
+    def main():
+        # 1. Configuración básica y logging
+        start_time = time.time()
+        print("Iniciando simulación...")
+        
+        # 2. Configurar semilla aleatoria para reproducibilidad
+        #    ns.core.RngSeedManager.SetSeed(simulation_seed)
+        
+        # 3. Crear nodos
+        # 4. Configurar WiFi (guardar referencia a phy)
+        # 5. Configurar movilidad
+        # 6. Instalar stack de Internet
+        # 7. Configurar protocolo de enrutamiento
+        # 8. Asignar direcciones IP
+        # 9. Configurar aplicaciones
+        
+        # 10. HABILITAR CAPTURA PCAP
+        # phy.EnablePcapAll("simulacion", True)
+        
+        # 11. Configurar FlowMonitor
+        flowmon_helper = ns.flow_monitor.FlowMonitorHelper()
+        monitor = flowmon_helper.InstallAll()
+        
+        # 12. Ejecutar simulación
+        # ns.core.Simulator.Run()
+        
+        # 13. Exportar resultados (XML + PCAP)
+        monitor.SerializeToXmlFile("resultados.xml", True, True)
+        
+        # 14. Generar simulation_metadata.json (ROBUSTNESS)
+        execution_time = time.time() - start_time
+        metadata = {
+            "status": "completed",
+            "timestamp": datetime.datetime.now().isoformat(),
+            "execution_time": execution_time,
+            "simulation_time": 0, # Reemplazar con variable usada
+            "files_generated": ["resultados.xml"],
+            "nodes_count": ns.network.NodeList.GetNNodes()
+        }
+        
+        with open("simulation_metadata.json", "w") as f:
+            json.dump(metadata, f, indent=4)
+            
+        print("✅ Simulación completada y metadatos guardados")
+        
+        # 15. Cleanup
+        ns.core.Simulator.Destroy()
+        return 0
+
+    if __name__ == "__main__":
+        try:
+            sys.exit(main())
+        except Exception as e:
+            # Error handling robusto
+            import traceback
+            traceback.print_exc()
+            metadata = {
+                "status": "failed",
+                "timestamp": datetime.datetime.now().isoformat(),
+                "error": str(e)
+            }
+            with open("simulation_metadata.json", "w") as f:
+                json.dump(metadata, f, indent=4)
+            sys.exit(1)
+    ```
+    
+    {error_context}
+
+    **FORMATO:**
+    Devuelve SOLO el código Python completo entre ```python y ```, sin explicaciones adicionales.
+
+  error_strategy:
+    compilation: |
+      **ESTRATEGIA PARA ERROR DE COMPILACIÓN/SINTAXIS:**
+      1. Verifica minuciosamente la sintaxis de Python.
+      2. Revisa que todos los módulos de NS-3 estén importados (ns.core, ns.network, etc.).
+      3. Asegúrate de que los nombres de clases y métodos de NS-3 sean correctos (case-sensitive).
+    simulation: |
+      **ESTRATEGIA PARA ERROR DE SIMULACIÓN (RUNTIME):**
+      1. Verifica que los objetos (nodos, aplicaciones) se hayan creado correctamente antes de usarlos.
+      2. Asegura que las interfaces IP estén asignadas.
+      3. Revisa conflictos de direcciones o puertos.
+      4. Verifica que FlowMonitor se instale al final.
+    timeout: |
+      **ESTRATEGIA PARA TIMEOUT:**
+      1. Reduce el tiempo de simulación (ej. a 50s).
+      2. Reduce el número de nodos.
+      3. Simplifica el modelo de tráfico.
+    general: |
+      **ESTRATEGIA GENERAL:**
+      1. Identifica la causa raíz del error.
+      2. Simplifica el código si es necesario.
+
+researcher:
+  generate_query: |
+    Genera una consulta de búsqueda académica (keywords en inglés) para la siguiente tarea de investigación.
+    La consulta debe ser corta (máximo 5-7 palabras) y enfocada en los temas principales.
+    Solo devuelve la consulta, nada más.
+    
+    Tarea: {task}
+
+  synthesis: |
+    Eres un investigador experto en redes de telecomunicaciones, protocolos de enrutamiento y ciudades inteligentes.
+
+    **TAREA DE INVESTIGACIÓN:**
+    {task}
+
+    **PAPERS ENCONTRADOS (ordenados por relevancia):**
+    {papers_summary}
+
+    **ANÁLISIS REQUERIDO:**
+
+    1. **Estado del Arte** (3-4 párrafos):
+       - Técnicas y algoritmos más prometedores mencionados
+       - Métricas de rendimiento reportadas (PDR, latencia, throughput, overhead)
+       - Comparación entre enfoques (tradicionales vs ML/DL)
+       - Limitaciones y desafíos identificados
+
+    2. **Implementación en NS-3**:
+       - Protocolos de enrutamiento específicos mencionados (AODV, OLSR, DSDV, etc.)
+       - Configuraciones de red sugeridas (número de nodos, área, movilidad)
+       - Parámetros críticos a ajustar
+       - Módulos de NS-3 relevantes
+
+    3. **Oportunidades de Investigación con Deep Learning**:
+       - Arquitecturas de redes neuronales aplicables (DQN, A3C, GNN, Transformer)
+       - Variables de estado para el agente RL
+       - Espacio de acciones posibles
+       - Función de recompensa sugerida
+       - Métricas de evaluación
+
+    4. **Brechas y Contribuciones Potenciales**:
+       - Qué no se ha explorado suficientemente
+       - Combinaciones novedosas de técnicas
+       - Escenarios no evaluados
+
+    **FORMATO:**
+    - Sé específico y técnico
+    - Cita números de paper cuando sea relevante [Paper X]
+    - Incluye valores numéricos cuando estén disponibles
+    - Prioriza información implementable
+
+analyst:
+  optimization: |
+    Eres un experto en optimización de protocolos de enrutamiento con Deep Reinforcement Learning y Graph Neural Networks.
+
+    **TAREA ORIGINAL:**
+    {task}
+
+    {stats_summary}
+
+    **ANÁLISIS PROFUNDO REQUERIDO:**
+
+    1. **Diagnóstico del Rendimiento Actual** (2-3 párrafos):
+       - Evaluación crítica: ¿Es aceptable para una red de este tipo?
+       - Comparación con benchmarks típicos de la literatura
+       - Identificación de métricas problemáticas y sus causas probables
+       - Análisis de variabilidad (desviaciones estándar altas/bajas)
+
+    2. **Identificación de Cuellos de Botella** (específico):
+       - Problemas de congestión (si PDR < 85%)
+       - Problemas de latencia (si delay > 100ms)
+       - Problemas de throughput (si < 1 Mbps)
+       - Problemas de estabilidad (si std alta)
+       - Factores del protocolo de enrutamiento que limitan rendimiento
+
+    3. **Propuesta de Arquitectura Deep Learning** (detallado):
+       
+       a) **Tipo de Red Neuronal**:
+          - DQN (Deep Q-Network) para decisiones discretas
+          - A3C (Asynchronous Advantage Actor-Critic) para entornos distribuidos
+          - GNN (Graph Neural Network) para topologías dinámicas
+          - Transformer para secuencias temporales
+          - Justifica tu elección basándote en las métricas
+
+       b) **Espacio de Estados** (qué observa el agente):
+          - Información local del nodo (buffer, vecinos, energía)
+          - Información de red (topología, tráfico, congestión)
+          - Métricas históricas (PDR reciente, delay promedio)
+          - Dimensionalidad sugerida
+
+       c) **Espacio de Acciones** (qué puede decidir):
+          - Selección de siguiente salto
+          - Ajuste de parámetros del protocolo
+          - Control de tasa de transmisión
+          - Gestión de rutas alternativas
+
+       d) **Función de Recompensa** (ecuación específica):
+          - Componentes: PDR, delay, throughput, overhead
+          - Pesos sugeridos para cada componente
+          - Penalizaciones (paquetes perdidos, colisiones)
+          - Ejemplo: R = w1*PDR - w2*delay - w3*overhead + w4*throughput
+
+    4. **Plan de Implementación en NS-3** (paso a paso):
+       
+       a) **Integración con ns3-ai**:
+          - Configurar interfaz Python-C++ con ns3-ai
+          - Definir mensajes de comunicación (estado/acción)
+          - Frecuencia de decisiones del agente
+
+       b) **Arquitectura del Sistema**:
+          - NS-3 como simulador de red
+          - PyTorch/TensorFlow para red neuronal
+          - Gym environment para interfaz RL
+          - Buffer de experiencias para training
+
+       c) **Proceso de Entrenamiento**:
+          - Número de episodios sugerido (1000-5000)
+          - Duración de cada episodio
+          - Estrategia de exploración (ε-greedy)
+          - Criterio de convergencia
+
+       d) **Configuración Específica**:
+          - Modificaciones al protocolo baseline
+          - Puntos de instrumentación en NS-3
+          - Logging y debugging
+
+    5. **Mejoras Incrementales Sugeridas** (antes de DL):
+       - Ajustes de parámetros del protocolo actual
+       - Optimizaciones simples que podrían mejorar métricas
+       - Quick wins
+
+    6. **Métricas de Éxito** (objetivos cuantitativos):
+       - PDR objetivo: X%
+       - Delay objetivo: Y ms
+       - Throughput objetivo: Z Mbps
+       - Mejora esperada vs baseline: W%
+
+    **FORMATO:**
+    - Sé extremadamente específico y técnico
+    - Incluye ecuaciones cuando sea relevante
+    - Proporciona valores numéricos concretos
+    - Cita papers relevantes si es posible
+    - Prioriza implementabilidad
+
+trace_analyzer:
+  report: |
+    Eres un experto en análisis de tráfico de redes y protocolos de enrutamiento.
+
+    {context}
+
+    **ANÁLISIS REQUERIDO:**
+
+    1. **Comportamiento del Protocolo de Enrutamiento**:
+       - ¿Cuánto overhead genera el protocolo?
+       - ¿Qué tipos de mensajes son más frecuentes?
+       - ¿Es eficiente el uso del ancho de banda?
+
+    2. **Patrones de Tráfico**:
+       - ¿Hay conversaciones dominantes?
+       - ¿Cómo se distribuye el tráfico entre nodos?
+       - ¿Hay indicios de congestión?
+
+    3. **Problemas Detectados**:
+       - ¿Hay retransmisiones excesivas?
+       - ¿Hay pérdida de paquetes evidente?
+       - ¿Hay anomalías en el tráfico?
+
+    4. **Recomendaciones**:
+       - ¿Qué se puede optimizar?
+       - ¿Qué parámetros ajustar?
+
+    Proporciona un análisis técnico y específico basado en los datos.
+
+scientific_writer:
+  briefing: |
+    Genera un briefing técnico conciso (máximo 2 páginas) del siguiente experimento de simulación de redes:
+
+    INFORMACIÓN DEL EXPERIMENTO:
+    - Nombre: {experiment_name}
+    - Fecha: {timestamp}
+    - Configuración: {config}
+
+    RESULTADOS OBTENIDOS:
+    {metrics}
+
+    El briefing debe incluir:
+    1. RESUMEN EJECUTIVO (3-4 líneas)
+    2. CONFIGURACIÓN DE LA SIMULACIÓN
+       - Protocolo evaluado
+       - Número de nodos
+       - Área de simulación
+       - Duración
+       - Modelo de movilidad
+    3. SCRIPT UTILIZADO
+       - Comando ejecutado
+       - Parámetros principales
+    4. RESULTADOS PRINCIPALES
+       - PDR (Packet Delivery Ratio)
+       - Delay promedio
+       - Throughput
+       - Overhead
+       - Con intervalos de confianza si están disponibles
+    5. OBSERVACIONES CLAVE
+       - Hallazgos principales
+       - Anomalías detectadas
+       - Recomendaciones
+
+    Formato: Markdown profesional con tablas y listas.
+    Tono: Técnico pero accesible.
+
+  detailed_report: |
+    Genera un informe técnico detallado (5-10 páginas) del siguiente experimento de simulación de redes:
+
+    INFORMACIÓN DEL EXPERIMENTO:
+    - Nombre: {experiment_name}
+    - Fecha: {timestamp}
+    - Configuración: {config}
+
+    RESULTADOS:
+    {metrics}
+
+    ANÁLISIS ESTADÍSTICO:
+    {statistical_analysis}
+
+    El informe debe incluir:
+
+    1. PORTADA
+       - Título del experimento
+       - Fecha
+       - Autor/Sistema
+
+    2. RESUMEN EJECUTIVO
+       - Objetivo del experimento
+       - Metodología
+       - Resultados principales
+       - Conclusiones
+
+    3. INTRODUCCIÓN
+       - Contexto del experimento
+       - Objetivos específicos
+       - Hipótesis
+
+    4. METODOLOGÍA
+       - Configuración de la simulación
+       - Parámetros utilizados
+       - Herramientas (NS-3, versión, módulos)
+       - Script de simulación (comando completo)
+       - Número de repeticiones
+       - Semillas aleatorias
+
+    5. RESULTADOS
+       - Métricas principales con tablas
+       - Intervalos de confianza (95%)
+       - Desviación estándar
+       - Valores mínimos y máximos
+       - Gráficos generados (referencias)
+
+    6. ANÁLISIS ESTADÍSTICO
+       - Tests de significancia aplicados
+       - Interpretación de resultados
+       - Comparación con valores esperados
+       - Validación de hipótesis
+
+    7. DISCUSIÓN
+       - Interpretación de hallazgos
+       - Comparación con literatura
+       - Limitaciones del estudio
+       - Implicaciones prácticas
+
+    8. CONCLUSIONES
+       - Resumen de hallazgos
+       - Respuesta a objetivos
+       - Trabajo futuro
+
+    9. REFERENCIAS
+       - NS-3 documentation
+       - Protocolos evaluados (RFCs)
+       - Literatura relevante
+
+    10. ANEXOS
+        - Configuración completa
+        - Datos crudos (resumen)
+        - Scripts utilizados
+
+    Formato: Markdown académico con secciones numeradas, tablas LaTeX-style, y referencias a figuras.
+    Tono: Académico y riguroso.

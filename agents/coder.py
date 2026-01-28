@@ -23,58 +23,10 @@ from utils.state import AgentState, add_audit_entry, increment_iteration
 from utils.logging_utils import update_agent_status, log_message
 from utils.validation import validate_code
 from utils.errors import CodeGenerationError
+from utils.prompts import get_prompt
 
 
-# Template base para scripts NS-3
-NS3_TEMPLATE = '''#!/usr/bin/env python3
-"""
-Script de simulación NS-3 generado automáticamente
-Objetivo: {objective}
-"""
-
-import sys
-import sys
-sys.path.insert(0, 'build/lib/python3')
-sys.path.insert(0, '/home/diego/ns3/build/bindings/python')  # CRITICAL: Path to NS-3 bindings
-
-import ns.core
-import ns.network
-import ns.internet
-import ns.mobility
-import ns.wifi
-import ns.applications
-import ns.flow_monitor
-
-def main():
-    """Función principal de simulación"""
-    
-    print("Iniciando simulación...")
-    
-    # Configuración básica
-    ns.core.Config.SetDefault("ns3::WifiRemoteStationManager::RtsCtsThreshold", 
-                              ns.core.StringValue("2200"))
-    
-    {code_body}
-    
-    # Configurar FlowMonitor para métricas
-    flowmon_helper = ns.flow_monitor.FlowMonitorHelper()
-    monitor = flowmon_helper.InstallAll()
-    
-    # Ejecutar simulación
-    print(f"Ejecutando simulación por {{simulation_time}} segundos...")
-    ns.core.Simulator.Stop(ns.core.Seconds(simulation_time))
-    ns.core.Simulator.Run()
-    
-    # Exportar resultados
-    monitor.SerializeToXmlFile("resultados.xml", True, True)
-    print("✅ Simulación completada. Resultados en resultados.xml")
-    
-    ns.core.Simulator.Destroy()
-    return 0
-
-if __name__ == "__main__":
-    sys.exit(main())
-'''
+# Template movido a config/prompts.yaml
 
 
 def extract_code_from_response(response: str) -> str:
@@ -147,239 +99,51 @@ esta solución funcionó:
 """
 
         # Paso 1: Chain of Thought - Planificación detallada
-        cot_prompt = f"""
-Planifica una simulación NS-3 paso a paso con máximo detalle:
-
-**TAREA:** {task}
-
-**CONTEXTO DE INVESTIGACIÓN:**
-{research_notes[:800] if research_notes else "Sin contexto específico"}
-{memory_context}
-
-Responde con precisión:
-1. **Tipo de red**: MANET/VANET/WSN/Mesh - justifica
-2. **Topología**: Número de nodos, área de simulación (mxm), densidad
-3. **Protocolo de enrutamiento**: AODV/OLSR/DSDV/DSR/HWMP - razón de elección
-4. **Métricas objetivo**: PDR, latencia, throughput, overhead, jitter
-5. **Modelo de movilidad**: RandomWaypoint/ConstantPosition/GaussMarkov - parámetros
-6. **Tráfico**: Tipo (UDP/TCP), tasa de paquetes, tamaño
-7. **Duración**: Tiempo de simulación en segundos (100-300s)
-8. **Configuración WiFi**: Estándar (802.11a/b/g/n), potencia TX, rango
-"""
-        
-        print("  📋 Planificando simulación (análisis profundo)...")
+        print("  🧠 Generando plan de simulación...")
         log_message("Coder", "Planificando simulación con Chain-of-Thought...")
+        
+        cot_prompt = get_prompt(
+            'coder', 
+            'chain_of_thought',
+            task=task,
+            research_notes=research_notes[:2000] if research_notes else "Sin contexto específico",
+            memory_context=memory_context
+        )
         print(f"  DEBUG: Invoking LLM for CoT with model {MODEL_CODING}...")
         reasoning = llm.invoke(cot_prompt)
         print(f"  DEBUG: LLM CoT response received. Length: {len(reasoning.content)}")
         print(f"  ✓ Planificación completada")
         
-        # Paso 2: Generación de código con template mejorado
-        code_prompt = f"""
-Eres un experto en NS-3 Python bindings. Genera un script COMPLETO, EJECUTABLE y ROBUSTO.
-
-**OBJETIVO:**
-{task}
-
-**TU PLANIFICACIÓN DETALLADA:**
-{reasoning.content}
-
-**INSTRUCCIONES CRÍTICAS:**
-1. USA SOLO Python bindings de NS-3 (NO C++)
-2. Imports correctos: import ns.core, import ns.network, import ns.internet, import ns.wifi, import ns.mobility, import ns.applications, import ns.flow_monitor
-3. Para protocolos de enrutamiento: import ns.aodv, import ns.olsr, import ns.dsdv
-4. Para redes mesh (HWMP): import ns.mesh, usar MeshHelper en lugar de WifiHelper
-4. Configura FlowMonitor CORRECTAMENTE para exportar a "resultados.xml"
-5. **IMPORTANTE: Habilita captura PCAP con phy.EnablePcapAll("simulacion", True)**
-6. Usa modelos de movilidad apropiados con parámetros realistas
-7. Configura aplicaciones de tráfico (UdpEchoClient/Server o OnOffApplication)
-8. Duración: 100-300 segundos
-9. Incluye logging para debugging
-10. Manejo de errores básico
-11. Comentarios en español explicando cada sección
-
-**ESTRUCTURA OBLIGATORIA:**
-```python
-#!/usr/bin/env python3
-import sys
-import sys
-sys.path.insert(0, 'build/lib/python3')
-sys.path.insert(0, '/home/diego/ns3/build/bindings/python')
-
-# Imports de NS-3
-import ns.core
-import ns.network
-import ns.internet
-import ns.wifi
-import ns.mobility
-import ns.applications
-import ns.flow_monitor
-# import ns.aodv  # Si usas AODV
-# import ns.olsr  # Si usas OLSR
-# import ns.mesh  # Si usas HWMP (IEEE 802.11s)
-
-def main():
-    # 1. Configuración básica y logging
-    # 2. Configurar semilla aleatoria para reproducibilidad
-    #    ns.core.RngSeedManager.SetSeed(simulation_seed)
-    # 3. Crear nodos
-    # 4. Configurar WiFi (guardar referencia a phy)
-    # 5. Configurar movilidad
-    # 6. Instalar stack de Internet
-    # 7. Configurar protocolo de enrutamiento
-    # 8. Asignar direcciones IP
-    # 9. Configurar aplicaciones
-    # 10. HABILITAR CAPTURA PCAP: phy.EnablePcapAll("simulacion", True)
-    # 11. Configurar FlowMonitor
-    # 12. Ejecutar simulación
-    # 13. Exportar resultados (XML + PCAP)
-    # 14. Cleanup
-    
-    return 0
-
-if __name__ == "__main__":
-    sys.exit(main())
-```
-
-**ERRORES COMUNES A EVITAR:**
-- No olvidar import ns.flow_monitor
-- FlowMonitor debe instalarse DESPUÉS de configurar aplicaciones
-- Usar ns.core.Seconds() para tiempos
-- Usar ns.core.StringValue() para configuraciones
-- **CRÍTICO: Configurar semilla ANTES de crear nodos**
-- **CRÍTICO: Habilitar PCAP ANTES de Simulator.Run()**
-- Llamar Simulator.Destroy() al final
-
-**TEMPLATE PARA REPRODUCIBILIDAD Y PCAP:**
-```python
-def main():
-    # 1. Configurar semilla para reproducibilidad (PRIMERO)
-    simulation_seed = 12345  # Usar valor del state o fijo
-    ns.core.RngSeedManager.SetSeed(simulation_seed)
-    ns.core.RngSeedManager.SetRun(1)
-    print(f"🎲 Semilla configurada: {{simulation_seed}}")
-    
-    # 2. Crear nodos y configurar red...
-    nodes = ns.network.NodeContainer()
-    nodes.Create(num_nodes)
-    
-    # 3. Configurar WiFi (GUARDAR referencia a phy)
-    wifi = ns.wifi.WifiHelper()
-    phy = ns.wifi.YansWifiPhyHelper()
-    # ... configuración WiFi ...
-    
-    # 4. Configurar movilidad, routing, aplicaciones...
-    
-    # 5. ANTES de Simulator.Run(), habilitar PCAP
-    phy.EnablePcapAll("simulacion", True)
-    print("📡 Captura PCAP habilitada: simulacion-X-Y.pcap")
-    
-    # 6. Ejecutar simulación
-    ns.core.Simulator.Run()
-    ns.core.Simulator.Destroy()
-```
-
-**EJEMPLO DE SCRIPT AODV CORRECTO (ÚSALO COMO REFERENCIA):**
-```python
-import ns.core
-import ns.network
-import ns.internet
-import ns.mobility
-import ns.aodv
-import ns.wifi
-import ns.applications
-
-def main():
-    # 1. Nodos
-    nodes = ns.network.NodeContainer()
-    nodes.Create(20)
-    
-    # 2. WiFi
-    wifi = ns.wifi.WifiHelper()
-    wifi.SetStandard(ns.wifi.WIFI_STANDARD_80211b)
-    wifi_phy = ns.wifi.YansWifiPhyHelper()
-    wifi_channel = ns.wifi.YansWifiChannelHelper.Default()
-    wifi_phy.SetChannel(wifi_channel)
-    wifi_mac = ns.wifi.WifiMacHelper()
-    wifi_mac.SetType("ns3::AdhocWifiMac")
-    devices = wifi.Install(wifi_phy, wifi_mac, nodes)
-    
-    # 3. Movilidad
-    mobility = ns.mobility.MobilityHelper()
-    mobility.SetPositionAllocator("ns3::RandomRectanglePositionAllocator",
-        "X", ns.core.StringValue("ns3::UniformRandomVariable[Min=0.0|Max=500.0]"),
-        "Y", ns.core.StringValue("ns3::UniformRandomVariable[Min=0.0|Max=500.0]"))
-    mobility.SetMobilityModel("ns3::RandomWaypointMobilityModel",
-        "Speed", ns.core.StringValue("ns3::UniformRandomVariable[Min=1.0|Max=20.0]"),
-        "Pause", ns.core.StringValue("ns3::ConstantRandomVariable[Constant=2.0]"))
-    mobility.Install(nodes)
-    
-    # 4. AODV Routing
-    aodv = ns.aodv.AodvHelper()  # CORRECTO: Usar helper
-    internet = ns.internet.InternetStackHelper()
-    internet.SetRoutingHelper(aodv)
-    internet.Install(nodes)
-    
-    # 5. IPs
-    ipv4 = ns.internet.Ipv4AddressHelper()
-    ipv4.SetBase("10.1.1.0", "255.255.255.0")
-    ipv4.Assign(devices)
-    
-    # 6. Aplicaciones
-    # ... (UdpEchoClient/Server)
-    
-    # 7. Ejecutar
-    ns.core.Simulator.Stop(ns.core.Seconds(100.0))
-    ns.core.Simulator.Run()
-    ns.core.Simulator.Destroy()
-```
-
-**FORMATO:**
-Devuelve SOLO el código Python completo entre ```python y ```, sin explicaciones adicionales.
-"""
-        
-        # Si hay error previo, agregar contexto de corrección
+        # Paso 2: Generación de código
+        error_context = ""
         if previous_error:
-            error_strategy = ""
+            # Obtener estrategia de error
+            strategy = get_prompt('coder', 'error_strategy.general')
             if error_type == "CompilationError":
-                error_strategy = """
-**ESTRATEGIA PARA ERROR DE COMPILACIÓN/SINTAXIS:**
-1. Verifica minuciosamente la sintaxis de Python.
-2. Revisa que todos los módulos de NS-3 estén importados (ns.core, ns.network, etc.).
-3. Asegúrate de que los nombres de clases y métodos de NS-3 sean correctos (case-sensitive).
-"""
+                strategy = get_prompt('coder', 'error_strategy.compilation')
             elif error_type == "SimulationError":
-                error_strategy = """
-**ESTRATEGIA PARA ERROR DE SIMULACIÓN (RUNTIME):**
-1. Verifica que los objetos (nodos, aplicaciones) se hayan creado correctamente antes de usarlos.
-2. Asegura que las interfaces IP estén asignadas.
-3. Revisa conflictos de direcciones o puertos.
-4. Verifica que FlowMonitor se instale al final.
-"""
+                strategy = get_prompt('coder', 'error_strategy.simulation')
             elif error_type == "TimeoutError":
-                error_strategy = """
-**ESTRATEGIA PARA TIMEOUT:**
-1. Reduce el tiempo de simulación (ej. a 50s).
-2. Reduce el número de nodos.
-3. Simplifica el modelo de tráfico.
-"""
-            else:
-                error_strategy = """
-**ESTRATEGIA GENERAL:**
-1. Identifica la causa raíz del error.
-2. Simplifica el código si es necesario.
-"""
-
-            code_prompt += f"""
-
+                strategy = get_prompt('coder', 'error_strategy.timeout')
+                
+            error_context = f"""
 **⚠️ ERROR ANTERIOR (Iteración {iteration}):**
 Tipo: {error_type or 'Desconocido'}
 Detalle: {previous_error[:500]}
 
-{error_strategy}
+ESTRATEGIA DE CORRECCIÓN:
+{strategy}
 
 IMPORTANTE: Este es el intento #{iteration+1}. Sé más cuidadoso.
 """
+
+        code_prompt = get_prompt(
+            'coder',
+            'generation',
+            task=task,
+            plan=reasoning.content,
+            error_context=error_context
+        )
         
         print(f"  💻 Generando código (intento #{iteration+1})...")
         log_message("Coder", f"Generando código (Iteración {iteration+1})...")

@@ -15,6 +15,7 @@ import shutil
 import datetime
 import re
 import time
+import json
 
 from config.settings import NS3_ROOT, SIMULATION_TIMEOUT, SIMULATIONS_DIR
 from utils.state import AgentState, add_audit_entry
@@ -217,8 +218,28 @@ def simulator_node(state: AgentState) -> Dict:
         execution_time = result_data['execution_time']
         print(f"  ⏱️  Tiempo de ejecución: {execution_time:.2f}s")
         
-        # Extraer información del stdout
+        # Extraer información del stdout (Fallback)
         sim_info = extract_simulation_info(result_data['stdout'])
+        
+        # Intentar leer metadatos JSON para mayor precisión
+        metadata_file = NS3_ROOT / "simulation_metadata.json"
+        if metadata_file.exists():
+            try:
+                with open(metadata_file, 'r') as f:
+                    metadata = json.load(f)
+                
+                print("  ✅ Metadatos JSON encontrados")
+                # Actualizar sim_info con datos precisos
+                sim_info['nodes_created'] = metadata.get('nodes_count', sim_info['nodes_created'])
+                sim_info['simulation_time'] = metadata.get('simulation_time', sim_info['simulation_time'])
+                
+                if metadata.get('status') == 'failed':
+                    sim_info['errors'].append(f"Error reportado en metadatos: {metadata.get('error')}")
+                    
+            except Exception as e:
+                print(f"  ⚠️  Error leyendo metadatos JSON: {e}")
+        else:
+            print("  ⚠️  No se encontró simulation_metadata.json (usando parsing de stdout)")
         
         # Mostrar warnings si existen
         if sim_info['warnings']:
@@ -261,6 +282,10 @@ def simulator_node(state: AgentState) -> Dict:
         stdout_file = results_dir / f"sim_{timestamp}_stdout.txt"
         with open(stdout_file, 'w', encoding='utf-8') as f:
             f.write(result_data['stdout'])
+            
+        # Mover metadata file si existe
+        if metadata_file.exists():
+            shutil.move(str(metadata_file), str(results_dir / f"metadata_{timestamp}.json"))
         
         print(f"  ✅ Simulación completada exitosamente")
         print(f"  📁 Resultados en: {results_dir}")

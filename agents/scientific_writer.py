@@ -16,6 +16,7 @@ from config.settings import MODEL_REASONING, OLLAMA_BASE_URL
 from utils.logging_utils import log_info, log_error, log_warning
 from utils.errors import DocumentGenerationError
 from utils.state import AgentState
+from utils.prompts import get_prompt
 
 
 # Inicializar modelo
@@ -80,41 +81,14 @@ def generate_experiment_briefing(results: Dict[str, Any], state: AgentState) -> 
     timestamp = results.get("timestamp", datetime.now().isoformat())
     
     # Construir prompt
-    prompt = f"""Genera un briefing técnico conciso (máximo 2 páginas) del siguiente experimento de simulación de redes:
-
-INFORMACIÓN DEL EXPERIMENTO:
-- Nombre: {experiment_name}
-- Fecha: {timestamp}
-- Configuración: {json.dumps(config, indent=2)}
-
-RESULTADOS OBTENIDOS:
-{json.dumps(metrics, indent=2)}
-
-El briefing debe incluir:
-1. RESUMEN EJECUTIVO (3-4 líneas)
-2. CONFIGURACIÓN DE LA SIMULACIÓN
-   - Protocolo evaluado
-   - Número de nodos
-   - Área de simulación
-   - Duración
-   - Modelo de movilidad
-3. SCRIPT UTILIZADO
-   - Comando ejecutado
-   - Parámetros principales
-4. RESULTADOS PRINCIPALES
-   - PDR (Packet Delivery Ratio)
-   - Delay promedio
-   - Throughput
-   - Overhead
-   - Con intervalos de confianza si están disponibles
-5. OBSERVACIONES CLAVE
-   - Hallazgos principales
-   - Anomalías detectadas
-   - Recomendaciones
-
-Formato: Markdown profesional con tablas y listas.
-Tono: Técnico pero accesible.
-"""
+    prompt = get_prompt(
+        'scientific_writer',
+        'briefing',
+        experiment_name=experiment_name,
+        timestamp=timestamp,
+        config=json.dumps(config, indent=2),
+        metrics=json.dumps(metrics, indent=2)
+    )
 
     messages = [
         SystemMessage(content="Eres un experto en redacción científica especializado en redes de computadoras y simulaciones NS-3."),
@@ -138,82 +112,15 @@ def generate_detailed_report(results: Dict[str, Any], state: AgentState) -> str:
     statistical_analysis = results.get("statistical_analysis", {})
     timestamp = results.get("timestamp", datetime.now().isoformat())
     
-    prompt = f"""Genera un informe técnico detallado (5-10 páginas) del siguiente experimento de simulación de redes:
-
-INFORMACIÓN DEL EXPERIMENTO:
-- Nombre: {experiment_name}
-- Fecha: {timestamp}
-- Configuración: {json.dumps(config, indent=2)}
-
-RESULTADOS:
-{json.dumps(metrics, indent=2)}
-
-ANÁLISIS ESTADÍSTICO:
-{json.dumps(statistical_analysis, indent=2)}
-
-El informe debe incluir:
-
-1. PORTADA
-   - Título del experimento
-   - Fecha
-   - Autor/Sistema
-
-2. RESUMEN EJECUTIVO
-   - Objetivo del experimento
-   - Metodología
-   - Resultados principales
-   - Conclusiones
-
-3. INTRODUCCIÓN
-   - Contexto del experimento
-   - Objetivos específicos
-   - Hipótesis
-
-4. METODOLOGÍA
-   - Configuración de la simulación
-   - Parámetros utilizados
-   - Herramientas (NS-3, versión, módulos)
-   - Script de simulación (comando completo)
-   - Número de repeticiones
-   - Semillas aleatorias
-
-5. RESULTADOS
-   - Métricas principales con tablas
-   - Intervalos de confianza (95%)
-   - Desviación estándar
-   - Valores mínimos y máximos
-   - Gráficos generados (referencias)
-
-6. ANÁLISIS ESTADÍSTICO
-   - Tests de significancia aplicados
-   - Interpretación de resultados
-   - Comparación con valores esperados
-   - Validación de hipótesis
-
-7. DISCUSIÓN
-   - Interpretación de hallazgos
-   - Comparación con literatura
-   - Limitaciones del estudio
-   - Implicaciones prácticas
-
-8. CONCLUSIONES
-   - Resumen de hallazgos
-   - Respuesta a objetivos
-   - Trabajo futuro
-
-9. REFERENCIAS
-   - NS-3 documentation
-   - Protocolos evaluados (RFCs)
-   - Literatura relevante
-
-10. ANEXOS
-    - Configuración completa
-    - Datos crudos (resumen)
-    - Scripts utilizados
-
-Formato: Markdown académico con secciones numeradas, tablas LaTeX-style, y referencias a figuras.
-Tono: Académico y riguroso.
-"""
+    prompt = get_prompt(
+        'scientific_writer',
+        'detailed_report',
+        experiment_name=experiment_name,
+        timestamp=timestamp,
+        config=json.dumps(config, indent=2),
+        metrics=json.dumps(metrics, indent=2),
+        statistical_analysis=json.dumps(statistical_analysis, indent=2)
+    )
 
     messages = [
         SystemMessage(content="Eres un investigador senior especializado en redes de computadoras, con experiencia en redacción de papers científicos y tesis doctorales."),
@@ -237,144 +144,28 @@ def generate_thesis_section(results: Dict[str, Any], state: AgentState) -> str:
     metrics = results.get("metrics", {})
     
     if section_type == "methodology":
-        prompt = f"""Genera la sección de METODOLOGÍA de una tesis doctoral para el siguiente experimento:
-
-EXPERIMENTO: {experiment_name}
-CONFIGURACIÓN: {json.dumps(config, indent=2)}
-
-La sección debe incluir:
-
-### 5.X Diseño del Experimento: {experiment_name}
-
-#### 5.X.1 Objetivos del Experimento
-- Objetivo general
-- Objetivos específicos
-- Hipótesis a validar
-
-#### 5.X.2 Configuración de la Simulación
-- Parámetros de red (tabla)
-- Modelo de movilidad
-- Configuración de tráfico
-- Justificación de parámetros
-
-#### 5.X.3 Herramientas Utilizadas
-- NS-3 (versión, módulos)
-- Scripts desarrollados
-- Herramientas de análisis
-
-#### 5.X.4 Métricas de Evaluación
-- PDR: definición y relevancia
-- Delay: definición y relevancia
-- Throughput: definición y relevancia
-- Overhead: definición y relevancia
-
-#### 5.X.5 Metodología Experimental
-- Número de repeticiones
-- Control de semillas aleatorias
-- Validación de resultados
-- Análisis estadístico aplicado
-
-#### 5.X.6 Reproducibilidad
-- Configuración completa
-- Scripts disponibles
-- Datos crudos almacenados
-
-Formato: LaTeX-compatible, con referencias bibliográficas [X], ecuaciones si es necesario.
-Tono: Académico formal, tesis doctoral.
-"""
+        prompt = get_prompt(
+            'scientific_writer',
+            'thesis_section.methodology',
+            experiment_name=experiment_name,
+            config=json.dumps(config, indent=2)
+        )
     
     elif section_type == "results":
-        prompt = f"""Genera la sección de RESULTADOS de una tesis doctoral para el siguiente experimento:
-
-EXPERIMENTO: {experiment_name}
-RESULTADOS: {json.dumps(metrics, indent=2)}
-
-La sección debe incluir:
-
-### 6.X Resultados del Experimento: {experiment_name}
-
-#### 6.X.1 Resultados Generales
-- Tabla resumen de métricas
-- Intervalos de confianza
-- Significancia estadística
-
-#### 6.X.2 Packet Delivery Ratio (PDR)
-- Valores obtenidos
-- Análisis de tendencias
-- Comparación con literatura
-- Figura X.Y (referencia)
-
-#### 6.X.3 End-to-End Delay
-- Valores obtenidos
-- Distribución de delays
-- Análisis de outliers
-- Figura X.Y (referencia)
-
-#### 6.X.4 Throughput
-- Valores obtenidos
-- Variabilidad temporal
-- Análisis de saturación
-- Figura X.Y (referencia)
-
-#### 6.X.5 Routing Overhead
-- Valores obtenidos
-- Eficiencia del protocolo
-- Trade-offs identificados
-- Figura X.Y (referencia)
-
-#### 6.X.6 Análisis de Significancia
-- Tests estadísticos aplicados
-- Valores p obtenidos
-- Interpretación de resultados
-- Validación de hipótesis
-
-Formato: LaTeX-compatible, con tablas, referencias a figuras, y citas bibliográficas.
-Tono: Académico formal, presentación objetiva de resultados.
-"""
+        prompt = get_prompt(
+            'scientific_writer',
+            'thesis_section.results',
+            experiment_name=experiment_name,
+            metrics=json.dumps(metrics, indent=2)
+        )
     
     else:  # discussion
-        prompt = f"""Genera la sección de DISCUSIÓN de una tesis doctoral para el siguiente experimento:
-
-EXPERIMENTO: {experiment_name}
-RESULTADOS: {json.dumps(metrics, indent=2)}
-
-La sección debe incluir:
-
-### 6.X Discusión de Resultados: {experiment_name}
-
-#### 6.X.1 Interpretación de Hallazgos
-- Explicación de resultados principales
-- Relación con objetivos planteados
-- Validación de hipótesis
-
-#### 6.X.2 Comparación con Estado del Arte
-- Benchmarking con literatura
-- Mejoras obtenidas
-- Limitaciones identificadas
-
-#### 6.X.3 Análisis de Factores Influyentes
-- Impacto de parámetros de red
-- Condiciones de movilidad
-- Patrones de tráfico
-
-#### 6.X.4 Implicaciones Prácticas
-- Aplicabilidad en escenarios reales
-- Recomendaciones de configuración
-- Trade-offs a considerar
-
-#### 6.X.5 Limitaciones del Estudio
-- Supuestos realizados
-- Restricciones de simulación
-- Áreas no cubiertas
-
-#### 6.X.6 Contribuciones
-- Aportes al conocimiento
-- Innovaciones metodológicas
-- Resultados novedosos
-
-Formato: LaTeX-compatible, con argumentación sólida y referencias bibliográficas.
-Tono: Académico analítico, crítico pero constructivo.
-"""
+        prompt = get_prompt(
+            'scientific_writer',
+            'thesis_section.discussion',
+            experiment_name=experiment_name,
+            metrics=json.dumps(metrics, indent=2)
+        )
 
     messages = [
         SystemMessage(content="Eres un profesor universitario con 20 años de experiencia dirigiendo tesis doctorales en redes de computadoras."),
@@ -396,86 +187,13 @@ def generate_paper_draft(results: Dict[str, Any], state: AgentState) -> str:
     config = results.get("configuration", {})
     metrics = results.get("metrics", {})
     
-    prompt = f"""Genera un borrador de paper científico (formato IEEE, 6-8 páginas) basado en:
-
-EXPERIMENTO: {experiment_name}
-CONFIGURACIÓN: {json.dumps(config, indent=2)}
-RESULTADOS: {json.dumps(metrics, indent=2)}
-
-El paper debe incluir:
-
-# [Título Sugerido]
-
-## Abstract
-(150-200 palabras)
-- Contexto y motivación
-- Problema abordado
-- Metodología propuesta
-- Resultados principales
-- Conclusiones
-
-## I. INTRODUCTION
-- Contexto de redes móviles ad-hoc
-- Desafíos actuales
-- Motivación del estudio
-- Contribuciones principales
-- Organización del paper
-
-## II. RELATED WORK
-- Protocolos de enrutamiento existentes
-- Trabajos previos en simulación
-- Gaps identificados
-- Posicionamiento de este trabajo
-
-## III. METHODOLOGY
-### A. Simulation Setup
-- NS-3 configuration
-- Network parameters
-- Mobility model
-- Traffic patterns
-
-### B. Evaluation Metrics
-- PDR, Delay, Throughput, Overhead
-- Statistical analysis approach
-
-### C. Experimental Design
-- Number of runs
-- Confidence intervals
-- Reproducibility measures
-
-## IV. RESULTS
-### A. Overall Performance
-- Summary table
-- Statistical significance
-
-### B. Detailed Analysis
-- PDR analysis
-- Delay analysis
-- Throughput analysis
-- Overhead analysis
-
-### C. Comparative Evaluation
-- Comparison with baseline
-- Performance trade-offs
-
-## V. DISCUSSION
-- Interpretation of findings
-- Practical implications
-- Limitations
-- Future work
-
-## VI. CONCLUSION
-- Summary of contributions
-- Key findings
-- Impact and applications
-
-## REFERENCES
-[1-15] (sugerencias de referencias relevantes)
-
-Formato: IEEE two-column style (indicar dónde van las figuras/tablas)
-Tono: Académico conciso, estilo paper de conferencia.
-Longitud: ~3000-4000 palabras
-"""
+    prompt = get_prompt(
+        'scientific_writer',
+        'paper_draft',
+        experiment_name=experiment_name,
+        config=json.dumps(config, indent=2),
+        metrics=json.dumps(metrics, indent=2)
+    )
 
     messages = [
         SystemMessage(content="Eres un investigador senior con múltiples publicaciones en IEEE INFOCOM, GLOBECOM y IEEE Transactions on Mobile Computing."),
@@ -521,61 +239,11 @@ def generate_comparative_analysis(results_list: List[Dict[str, Any]], state: Age
     """
     log_info("ScientificWriter", "📊 Generando análisis comparativo...")
     
-    prompt = f"""Genera un análisis comparativo detallado de los siguientes experimentos:
-
-EXPERIMENTOS:
-{json.dumps(results_list, indent=2)}
-
-El análisis debe incluir:
-
-## ANÁLISIS COMPARATIVO
-
-### 1. Resumen de Experimentos
-- Tabla comparativa de configuraciones
-- Diferencias clave entre experimentos
-
-### 2. Comparación de Métricas
-
-#### 2.1 Packet Delivery Ratio (PDR)
-- Tabla comparativa
-- Gráfico de barras (descripción)
-- Análisis de diferencias
-- Significancia estadística
-
-#### 2.2 End-to-End Delay
-- Tabla comparativa
-- Gráfico de barras (descripción)
-- Análisis de diferencias
-- Significancia estadística
-
-#### 2.3 Throughput
-- Tabla comparativa
-- Gráfico de barras (descripción)
-- Análisis de diferencias
-
-#### 2.4 Routing Overhead
-- Tabla comparativa
-- Gráfico de barras (descripción)
-- Trade-offs identificados
-
-### 3. Análisis de Trade-offs
-- PDR vs Overhead
-- Delay vs Throughput
-- Eficiencia general
-
-### 4. Recomendaciones
-- Mejor configuración según escenario
-- Casos de uso recomendados
-- Consideraciones prácticas
-
-### 5. Conclusiones
-- Hallazgos principales
-- Protocolo/configuración ganador
-- Justificación de la elección
-
-Formato: Markdown con tablas comparativas
-Tono: Analítico y objetivo
-"""
+    prompt = get_prompt(
+        'scientific_writer',
+        'comparative_analysis',
+        experiments=json.dumps(results_list, indent=2)
+    )
 
     messages = [
         SystemMessage(content="Eres un experto en análisis comparativo de protocolos de red y evaluación de rendimiento."),
@@ -596,118 +264,12 @@ def generate_presentation_slides(results: Dict[str, Any], state: AgentState) -> 
     experiment_name = results.get("experiment_name", "Experimento")
     metrics = results.get("metrics", {})
     
-    prompt = f"""Genera el contenido para una presentación de 10-15 slides sobre:
-
-EXPERIMENTO: {experiment_name}
-RESULTADOS: {json.dumps(metrics, indent=2)}
-
-Formato: Markdown para Marp/reveal.js
-
----
-# [Título del Experimento]
-
-Presentación de Resultados
-
----
-## Agenda
-
-1. Motivación
-2. Objetivos
-3. Metodología
-4. Resultados
-5. Conclusiones
-
----
-## Motivación
-
-- Contexto del problema
-- Por qué es importante
-- Desafíos actuales
-
----
-## Objetivos
-
-- Objetivo principal
-- Objetivos específicos
-- Hipótesis
-
----
-## Metodología
-
-### Configuración de Simulación
-- Parámetros clave
-- Herramientas utilizadas
-- Métricas evaluadas
-
----
-## Resultados: PDR
-
-[Gráfico de barras]
-
-- Valor obtenido: X%
-- Intervalo de confianza: [X, Y]
-- Interpretación
-
----
-## Resultados: Delay
-
-[Gráfico de líneas]
-
-- Delay promedio: X ms
-- Desviación estándar: Y ms
-- Análisis
-
----
-## Resultados: Throughput
-
-[Gráfico de área]
-
-- Throughput promedio: X Mbps
-- Picos observados
-- Análisis
-
----
-## Resultados: Overhead
-
-[Gráfico de barras]
-
-- Overhead: X%
-- Eficiencia del protocolo
-- Trade-offs
-
----
-## Análisis Comparativo
-
-[Tabla comparativa]
-
-- Comparación con literatura
-- Mejoras obtenidas
-- Limitaciones
-
----
-## Conclusiones
-
-✅ Hallazgo 1
-✅ Hallazgo 2
-✅ Hallazgo 3
-
----
-## Trabajo Futuro
-
-- Extensión 1
-- Extensión 2
-- Extensión 3
-
----
-## ¡Gracias!
-
-Preguntas?
-
----
-
-Incluye notas de presentador para cada slide.
-Sugiere dónde colocar gráficos y tablas.
-"""
+    prompt = get_prompt(
+        'scientific_writer',
+        'presentation_slides',
+        experiment_name=experiment_name,
+        metrics=json.dumps(metrics, indent=2)
+    )
 
     messages = [
         SystemMessage(content="Eres un experto en comunicación científica y presentaciones académicas."),
