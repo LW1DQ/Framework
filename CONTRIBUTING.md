@@ -25,6 +25,37 @@ Open an Issue with the `enhancement` label describing your idea and why it would
 
 ---
 
+## ⚙️ Development Setup
+
+To set up the development environment:
+
+1.  **Clone and Setup**:
+    ```bash
+    git clone https://github.com/LW1DQ/Framework.git
+    cd Framework
+    ./ns3_ai_setup.sh
+    source .venv/bin/activate
+    ```
+
+2.  **Install Dev Dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    pip install pytest pytest-cov black flake8 pre-commit
+    ```
+
+3.  **Install Pre-commit Hooks**:
+    ```bash
+    pre-commit install
+    ```
+
+4.  **Configure LLM**:
+    Copy the example config and set up your keys:
+    ```bash
+    cp config/llm_config.yaml.example config/llm_config.yaml
+    ```
+
+---
+
 ## 💻 Development Standards
 
 ### Code Style

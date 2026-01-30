@@ -1,4 +1,11 @@
 # Python
+config/api_keys.yaml
+config/llm_config.yaml
+.env
+*.key
+models/
+*.bin
+*.gguf
 __pycache__/
 *.pyc
 *.pyo

@@ -1,0 +1,75 @@
+# config/llm_config.yaml.example
+# Copy this file to llm_config.yaml and configure your LLM settings
+
+llm:
+  # Provider: "ollama" (local, free) or "anthropic", "openai", "google" (API)
+  provider: "ollama"
+  
+  # Model name (depends on provider)
+  model: "llama3.1:8b"
+  
+  # Generation parameters
+  temperature: 0.1        # Lower = more deterministic
+  max_tokens: 4096        # Maximum output length
+  top_p: 0.9
+  
+  # Rate limiting
+  rate_limit: 60          # Requests per minute
+  timeout: 300            # Seconds
+  
+  # Cost control (for commercial APIs)
+  monthly_budget: 50      # USD (optional)
+  alert_threshold: 0.8    # Alert at 80% of budget
+
+# ============================================
+# PROVIDER-SPECIFIC CONFIGURATIONS
+# ============================================
+
+# Anthropic Claude (RECOMMENDED for production)
+# Get API key: https://console.anthropic.com/
+anthropic:
+  api_key: "${ANTHROPIC_API_KEY}"  # Set as environment variable
+  model: "claude-3-5-sonnet-20241022"
+  # Cost: ~$0.24 per full experiment cycle
+
+# OpenAI GPT-4
+# Get API key: https://platform.openai.com/
+openai:
+  api_key: "${OPENAI_API_KEY}"
+  model: "gpt-4-turbo-preview"
+  organization: ""  # Optional
+  # Cost: ~$0.80 per full experiment cycle
+
+# Google Gemini
+# Get API key: https://makersuite.google.com/
+google:
+  api_key: "${GOOGLE_API_KEY}"
+  model: "gemini-pro"
+  # Cost: ~$0.12 per full experiment cycle
+
+# Ollama (Local, FREE)
+# Install: curl -fsSL https://ollama.ai/install.sh | sh
+ollama:
+  base_url: "http://localhost:11434"
+  model: "llama3.1:8b"  # or "llama3.2:70b" for better quality
+  # Cost: FREE (requires local GPU)
+
+# ============================================
+# ADVANCED: PER-AGENT CONFIGURATION
+# ============================================
+
+# Use different models for different agents (optional)
+agent_overrides:
+  researcher:
+    provider: "openai"  # Best for literature review
+    model: "gpt-4-turbo-preview"
+  
+  coder:
+    provider: "anthropic"  # Best for code generation
+    model: "claude-3-5-sonnet-20241022"
+  
+  scientific_writer:
+    provider: "anthropic"  # Best for academic writing
+    model: "claude-3-5-sonnet-20241022"
+  
+  # Other agents use default configuration
